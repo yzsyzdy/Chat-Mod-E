@@ -2,14 +2,11 @@ package com.niuqu.chatbubble.ui;
 import com.niuqu.chatbubble.texture.UiTextureManager;
 import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
 import com.niuqu.chatbubble.render.ChatBubbleTheme;
-import com.niuqu.chatbubble.ChatBubbleScreen;
+import com.niuqu.chatbubble.render.ChatBubbleScreen;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-
-import java.util.function.Function;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 public class ChatSettingsMenu {
     private static final int W = 100;
@@ -52,10 +49,10 @@ public class ChatSettingsMenu {
         if (clearArmed && now - clearArmedAt >= ARM_MS) clearArmed = false;
     }
 
-    public void render(DrawContext g, int mouseX, int mouseY,
-            TextRenderer font, ChatBubbleTheme.Colors c,
+    public void render(GuiGraphics g, int mouseX, int mouseY,
+            net.minecraft.client.gui.Font font, ChatBubbleTheme.Colors c,
             int panelX, int panelW, int barTop,
-            Function<String, Identifier> iconTex, float alpha) {
+            java.util.function.Function<String, ResourceLocation> iconTex, float alpha) {
         if (!visible) return;
         int a255 = (int) (255 * alpha);
         int gearX = panelX + 4;
@@ -66,18 +63,18 @@ public class ChatSettingsMenu {
         com.niuqu.chatbubble.texture.ColoredTextureRenderer.drawWithAlpha(g,
             com.niuqu.chatbubble.texture.UiTextureManager.rl(com.niuqu.chatbubble.texture.UiElement.CONTENT_BG),
             px, py, W, menuH, alpha);
-        g.drawBorder(px, py, W, menuH, ChatBubbleTheme.alphaBlend(c.divider(), a255));
+        g.renderOutline(px, py, W, menuH, ChatBubbleTheme.alphaBlend(c.divider(), a255));
 
-        Identifier[] icons = {
+        ResourceLocation[] icons = {
             iconTex.apply("search"), iconTex.apply("quick_chat"),
             iconTex.apply("theme"), iconTex.apply("settings"), iconTex.apply("trash")
         };
         String[] labels = {
-            Text.translatable("e33chat.menu.search").getString(),
-            Text.translatable("e33chat.menu.quick_chat").getString(),
-            Text.translatable("e33chat.menu.theme").getString(),
-            Text.translatable("e33chat.menu.settings").getString(),
-            Text.translatable(clearArmed
+            Component.translatable("e33chat.menu.search").getString(),
+            Component.translatable("e33chat.menu.quick_chat").getString(),
+            Component.translatable("e33chat.menu.theme").getString(),
+            Component.translatable("e33chat.menu.settings").getString(),
+            Component.translatable(clearArmed
                 ? "e33chat.menu.clear_confirm" : "e33chat.menu.clear_history").getString()
         };
 
@@ -90,11 +87,11 @@ public class ChatSettingsMenu {
                 px + 1, ry, W - 2, ROW_H, alpha);
             ChatBubbleScreen.drawTextureIconAlpha(g, icons[i], px + 3, ry + 2, 14, alpha);
             int maxTextW = W - 22;
-            String label = font.trimToWidth(labels[i], maxTextW);
+            String label = font.plainSubstrByWidth(labels[i], maxTextW);
             int color = clearArmed && i == CLEAR_ROW
                 ? ChatBubbleTheme.alphaBlend(CLEAR_RED, a255)
                 : ChatBubbleTheme.alphaBlend(c.textPrimary(), a255);
-            g.drawText(font, label, px + 20, ry + 4, color, false);
+            g.drawString(font, Component.literal(label), px + 20, ry + 4, color, false);
         }
     }
 

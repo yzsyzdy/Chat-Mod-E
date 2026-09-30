@@ -1,5 +1,6 @@
 package com.niuqu.chatbubble.image;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.logging.LogUtils;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -8,7 +9,6 @@ import java.util.Iterator;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
-import net.minecraft.client.texture.NativeImage;
 import org.slf4j.Logger;
 
 /**
@@ -80,7 +80,7 @@ public final class RasterImageDecoder {
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 int c = argb[y * w + x];
-                out.setColor(x, y, (c & 0xFF00FF00) | ((c & 0x00FF0000) >> 16) | ((c & 0x000000FF) << 16));
+                out.setPixelRGBA(x, y, (c & 0xFF00FF00) | ((c & 0x00FF0000) >> 16) | ((c & 0x000000FF) << 16));
             }
         }
         return out;

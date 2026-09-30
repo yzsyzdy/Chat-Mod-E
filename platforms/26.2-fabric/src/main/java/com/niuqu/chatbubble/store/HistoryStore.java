@@ -17,11 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 public final class HistoryStore {
     private HistoryStore() {}
 
@@ -33,7 +33,7 @@ public final class HistoryStore {
 
     private static java.io.File gameDir() {
         if (gameDirSupplier != null) return gameDirSupplier.get();
-        return MinecraftClient.getInstance().runDirectory;
+        return Minecraft.getInstance().gameDirectory;
     }
 
     public static File getHistoryFile(String worldKey) {
@@ -76,7 +76,7 @@ public final class HistoryStore {
     // mirrors the AuthMe-family login/register aliases
     public static boolean isSensitiveCommand(String text) {
         if (text == null) return false;
-        String s = Formatting.strip(text);
+        String s = ChatFormatting.stripFormatting(text);
         if (s == null) return false;
         s = s.trim();
         if (!s.startsWith("/")) return false;
@@ -103,8 +103,8 @@ public final class HistoryStore {
         obj.put("uuid", msg.senderUUID() != null ? msg.senderUUID().toString() : "");
         String senderJson = null, contentJson = null;
         try {
-            senderJson = Text.Serialization.toJsonString(msg.senderName(), registries());
-            contentJson = Text.Serialization.toJsonString(msg.content(), registries());
+            senderJson = Component.Serializer.toJson(msg.senderName(), registries());
+            contentJson = Component.Serializer.toJson(msg.content(), registries());
         } catch (Throwable ignored) {
             // Component codecs unavailable (headless test env / broken registries):
             // fall back to plain-text fields; styled fields are omitted.
@@ -170,12 +170,12 @@ public final class HistoryStore {
         if (!(timeObj instanceof Number)) return null;
         UUID uuid = null;
         try { uuid = UUID.fromString(String.valueOf(obj.get("uuid"))); } catch (Exception ignored) {}
-        Text senderName = componentFrom(obj, "senderJson", "sender");
-        Text content = componentFrom(obj, "contentJson", "content");
+        Component senderName = componentFrom(obj, "senderJson", "sender");
+        Component content = componentFrom(obj, "contentJson", "content");
         if (content == null || content.getString().isBlank()) return null;
         return new ChatMessage(
             uuid != null ? uuid : new UUID(0, 0),
-            senderName != null ? senderName : Text.literal(""),
+            senderName != null ? senderName : Component.literal(""),
             content,
             ((Number) timeObj).longValue(),
             Boolean.TRUE.equals(obj.get("own")),
@@ -191,35 +191,35 @@ public final class HistoryStore {
         );
     }
 
-    static Text componentFrom(Map<String, Object> obj, String jsonKey, String textKey) {
+    static Component componentFrom(Map<String, Object> obj, String jsonKey, String textKey) {
         String json = (String) obj.get(jsonKey);
         if (json != null) {
-            try { return Text.Serialization.fromJson(json, registries()); } catch (Exception ignored) {}
+            try { return Component.Serializer.fromJson(json, registries()); } catch (Exception ignored) {}
         }
         String text = (String) obj.get(textKey);
         return text != null ? parseStyledText(text) : null;
     }
-static net.minecraft.registry.RegistryWrapper.WrapperLookup registries() {
-        MinecraftClient mc = MinecraftClient.getInstance();
+static net.minecraft.core.HolderLookup.Provider registries() {
+        Minecraft mc = Minecraft.getInstance();
         if (mc != null) {
-            var world = mc.world;
-            if (world != null) return world.getRegistryManager();
-            var conn = mc.getNetworkHandler();
-            if (conn != null) return conn.getRegistryManager();
+            var world = mc.level;
+            if (world != null) return world.registryAccess();
+            var conn = mc.getConnection();
+            if (conn != null) return conn.registryAccess();
         }
         try {
-            return net.minecraft.registry.BuiltinRegistries.createWrapperLookup();
+            return net.minecraft.data.registries.VanillaRegistries.createLookup();
         } catch (Throwable ignored) {
             // Headless test fallback: an empty lookup serializes plain-text
             // components fine; registry-dependent hovers degrade instead of crashing
-            return new net.minecraft.registry.RegistryWrapper.WrapperLookup() {
+            return new net.minecraft.core.HolderLookup.Provider() {
                 @Override
-                public java.util.stream.Stream<net.minecraft.registry.RegistryKey<? extends net.minecraft.registry.Registry<?>>> streamAllRegistryKeys() {
+                public java.util.stream.Stream<net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<?>>> listRegistries() {
                     return java.util.stream.Stream.empty();
                 }
                 @Override
-                public <T> java.util.Optional<net.minecraft.registry.RegistryWrapper.Impl<T>> getOptionalWrapper(
-                        net.minecraft.registry.RegistryKey<? extends net.minecraft.registry.Registry<? extends T>> key) {
+                public <T> java.util.Optional<net.minecraft.core.HolderLookup.RegistryLookup<T>> lookup(
+                        net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<? extends T>> key) {
                     return java.util.Optional.empty();
                 }
             };
@@ -249,15 +249,15 @@ static net.minecraft.registry.RegistryWrapper.WrapperLookup registries() {
 
     // Section-sign codes ("§6...§r") back into a styled component; unknown codes
     // (e.g. a stray §x from a plugin) fall through as literal text
-    public static Text parseStyledText(String s) {
-        MutableText out = Text.empty();
+    public static Component parseStyledText(String s) {
+        MutableComponent out = Component.empty();
         Style style = Style.EMPTY;
         StringBuilder buf = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
             char ch = s.charAt(i);
             if (ch == '§' && i + 1 < s.length()) {
                 if (buf.length() > 0) {
-                    out.append(Text.literal(buf.toString()).fillStyle(style));
+                    out.append(Component.literal(buf.toString()).withStyle(style));
                     buf.setLength(0);
                 }
                 Style next = applySectionCode(style, s.charAt(i + 1));
@@ -272,32 +272,32 @@ static net.minecraft.registry.RegistryWrapper.WrapperLookup registries() {
                 buf.append(ch);
             }
         }
-        if (buf.length() > 0) out.append(Text.literal(buf.toString()).fillStyle(style));
+        if (buf.length() > 0) out.append(Component.literal(buf.toString()).withStyle(style));
         return out;
     }
 
     static Style applySectionCode(Style style, char code) {
         switch (Character.toLowerCase(code)) {
-            case '0': return style.withColor(Formatting.BLACK.getColorValue() != null ? Formatting.BLACK.getColorValue() : null);
-            case '1': return style.withColor(Formatting.DARK_BLUE.getColorValue() != null ? Formatting.DARK_BLUE.getColorValue() : null);
-            case '2': return style.withColor(Formatting.DARK_GREEN.getColorValue() != null ? Formatting.DARK_GREEN.getColorValue() : null);
-            case '3': return style.withColor(Formatting.DARK_AQUA.getColorValue() != null ? Formatting.DARK_AQUA.getColorValue() : null);
-            case '4': return style.withColor(Formatting.DARK_RED.getColorValue() != null ? Formatting.DARK_RED.getColorValue() : null);
-            case '5': return style.withColor(Formatting.DARK_PURPLE.getColorValue() != null ? Formatting.DARK_PURPLE.getColorValue() : null);
-            case '6': return style.withColor(Formatting.GOLD.getColorValue() != null ? Formatting.GOLD.getColorValue() : null);
-            case '7': return style.withColor(Formatting.GRAY.getColorValue() != null ? Formatting.GRAY.getColorValue() : null);
-            case '8': return style.withColor(Formatting.DARK_GRAY.getColorValue() != null ? Formatting.DARK_GRAY.getColorValue() : null);
-            case '9': return style.withColor(Formatting.BLUE.getColorValue() != null ? Formatting.BLUE.getColorValue() : null);
-            case 'a': return style.withColor(Formatting.GREEN.getColorValue() != null ? Formatting.GREEN.getColorValue() : null);
-            case 'b': return style.withColor(Formatting.AQUA.getColorValue() != null ? Formatting.AQUA.getColorValue() : null);
-            case 'c': return style.withColor(Formatting.RED.getColorValue() != null ? Formatting.RED.getColorValue() : null);
-            case 'd': return style.withColor(Formatting.LIGHT_PURPLE.getColorValue() != null ? Formatting.LIGHT_PURPLE.getColorValue() : null);
-            case 'e': return style.withColor(Formatting.YELLOW.getColorValue() != null ? Formatting.YELLOW.getColorValue() : null);
-            case 'f': return style.withColor(Formatting.WHITE.getColorValue() != null ? Formatting.WHITE.getColorValue() : null);
+            case '0': return style.withColor(ChatFormatting.BLACK.getColor() != null ? ChatFormatting.BLACK.getColor() : null);
+            case '1': return style.withColor(ChatFormatting.DARK_BLUE.getColor() != null ? ChatFormatting.DARK_BLUE.getColor() : null);
+            case '2': return style.withColor(ChatFormatting.DARK_GREEN.getColor() != null ? ChatFormatting.DARK_GREEN.getColor() : null);
+            case '3': return style.withColor(ChatFormatting.DARK_AQUA.getColor() != null ? ChatFormatting.DARK_AQUA.getColor() : null);
+            case '4': return style.withColor(ChatFormatting.DARK_RED.getColor() != null ? ChatFormatting.DARK_RED.getColor() : null);
+            case '5': return style.withColor(ChatFormatting.DARK_PURPLE.getColor() != null ? ChatFormatting.DARK_PURPLE.getColor() : null);
+            case '6': return style.withColor(ChatFormatting.GOLD.getColor() != null ? ChatFormatting.GOLD.getColor() : null);
+            case '7': return style.withColor(ChatFormatting.GRAY.getColor() != null ? ChatFormatting.GRAY.getColor() : null);
+            case '8': return style.withColor(ChatFormatting.DARK_GRAY.getColor() != null ? ChatFormatting.DARK_GRAY.getColor() : null);
+            case '9': return style.withColor(ChatFormatting.BLUE.getColor() != null ? ChatFormatting.BLUE.getColor() : null);
+            case 'a': return style.withColor(ChatFormatting.GREEN.getColor() != null ? ChatFormatting.GREEN.getColor() : null);
+            case 'b': return style.withColor(ChatFormatting.AQUA.getColor() != null ? ChatFormatting.AQUA.getColor() : null);
+            case 'c': return style.withColor(ChatFormatting.RED.getColor() != null ? ChatFormatting.RED.getColor() : null);
+            case 'd': return style.withColor(ChatFormatting.LIGHT_PURPLE.getColor() != null ? ChatFormatting.LIGHT_PURPLE.getColor() : null);
+            case 'e': return style.withColor(ChatFormatting.YELLOW.getColor() != null ? ChatFormatting.YELLOW.getColor() : null);
+            case 'f': return style.withColor(ChatFormatting.WHITE.getColor() != null ? ChatFormatting.WHITE.getColor() : null);
             case 'k': return style.withObfuscated(true);
             case 'l': return style.withBold(true);
             case 'm': return style.withStrikethrough(true);
-            case 'n': return style.withUnderline(true);
+            case 'n': return style.withUnderlined(true);
             case 'o': return style.withItalic(true);
             case 'r': return Style.EMPTY;
             default: return null;
@@ -320,14 +320,14 @@ static net.minecraft.registry.RegistryWrapper.WrapperLookup registries() {
                 Map<String, Object> obj = list.get(i);
                 try {
                     UUID uuid = UUID.fromString((String) obj.get("senderUUID"));
-                    Text senderName = null;
+                    Component senderName = null;
                     String snJson = (String) obj.get("senderNameJson");
                     if (snJson != null) {
-                        try { senderName = Text.Serialization.fromJson(snJson, registries()); } catch (Exception ignored2) {}
+                        try { senderName = Component.Serializer.fromJson(snJson, registries()); } catch (Exception ignored2) {}
                     }
-                    if (senderName == null) senderName = Text.literal((String) obj.get("senderName"));
-                    Text content = Text.Serialization.fromJson((String) obj.get("content"), registries());
-                    if (content == null) content = Text.literal("");
+                    if (senderName == null) senderName = Component.literal((String) obj.get("senderName"));
+                    Component content = Component.Serializer.fromJson((String) obj.get("content"), registries());
+                    if (content == null) content = Component.literal("");
                     if (content.getString().isBlank()) continue;
                     LocalTime t = LocalTime.parse((String) obj.get("time"), DateTimeFormatter.ISO_LOCAL_TIME);
                     if (latest != null && t.isAfter(latest)) day = day.minusDays(1);

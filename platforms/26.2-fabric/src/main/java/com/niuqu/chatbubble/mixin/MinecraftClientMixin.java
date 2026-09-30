@@ -3,18 +3,18 @@ package com.niuqu.chatbubble.mixin;
 import com.niuqu.chatbubble.ui.BedScreen;
 import com.niuqu.chatbubble.ChatBubbleClientSetup;
 import com.niuqu.chatbubble.ChatBubbleScreen;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.SleepingChatScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.lang.reflect.Field;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.InBedChatScreen;
+import net.minecraft.client.gui.screens.Screen;
 
-@Mixin(MinecraftClient.class)
+@Mixin(Minecraft.class)
 public class MinecraftClientMixin {
 
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
@@ -22,15 +22,15 @@ public class MinecraftClientMixin {
         var cfg = ChatBubbleClientSetup.config();
         if (cfg == null || !cfg.enabled()) return;
 
-        if (screen instanceof SleepingChatScreen) {
+        if (screen instanceof InBedChatScreen) {
             ci.cancel();
-            BedScreen.setScreenBeforeSleep(MinecraftClient.getInstance().currentScreen);
-            MinecraftClient.getInstance().setScreen(new BedScreen());
+            BedScreen.setScreenBeforeSleep(Minecraft.getInstance().screen);
+            Minecraft.getInstance().setScreen(new BedScreen());
         } else if (screen instanceof ChatScreen chatScreen
                 && !(chatScreen instanceof ChatBubbleScreen)) {
             ci.cancel();
             String initial = getChatInitialText(chatScreen);
-            MinecraftClient.getInstance().setScreen(new ChatBubbleScreen(initial));
+            Minecraft.getInstance().setScreen(new ChatBubbleScreen(initial));
         }
     }
 

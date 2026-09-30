@@ -103,16 +103,16 @@ class ChatMessageStoreTest {
 
     @Test void extractWhisper_metaContentWins() {
         ChatMessageStore.SenderMeta meta = new ChatMessageStore.SenderMeta(
-            java.util.UUID.randomUUID(), net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("meta content"), false,
+            java.util.UUID.randomUUID(), net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("meta content"), false,
             "Steve", true, "Steve");
         assertEquals("meta content", ChatMessageStore.extractWhisperContent("Steve 悄悄对你说: junk", meta));
     }
 
     @Test void extractWhisper_blankMetaFallsBackToText() {
         ChatMessageStore.SenderMeta meta = new ChatMessageStore.SenderMeta(
-            java.util.UUID.randomUUID(), net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("   "), false,
+            java.util.UUID.randomUUID(), net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("   "), false,
             "Steve", true, "Steve");
         assertEquals("fallback", ChatMessageStore.extractWhisperContent("你悄悄对 Steve 说: fallback", meta));
     }
@@ -207,67 +207,67 @@ class ChatMessageStoreTest {
 
     @Test void whisperName_zhOutgoing() {
         // the name slot is the TARGET — the sender is self, so fallback wins
-        var line = net.minecraft.text.Text.literal("你悄悄地对[称号]E33EPUS说：hi");
-        assertEquals("E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.text.Text.literal("E33EPUS")).getString());
+        var line = net.minecraft.network.chat.Component.literal("你悄悄地对[称号]E33EPUS说：hi");
+        assertEquals("E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.network.chat.Component.literal("E33EPUS")).getString());
     }
 
     @Test void whisperName_zhIncoming() {
-        var line = net.minecraft.text.Text.literal("[称号]E33EPUS悄悄地对你说：hi");
-        assertEquals("[称号]E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.text.Text.literal("E33EPUS")).getString());
+        var line = net.minecraft.network.chat.Component.literal("[称号]E33EPUS悄悄地对你说：hi");
+        assertEquals("[称号]E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.network.chat.Component.literal("E33EPUS")).getString());
     }
 
     @Test void whisperName_enOutgoing() {
         // the name slot is the TARGET — the sender is self, so fallback wins
-        var line = net.minecraft.text.Text.literal("You whisper to [VIP]Steve: hi");
-        assertEquals("Steve", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.text.Text.literal("Steve")).getString());
+        var line = net.minecraft.network.chat.Component.literal("You whisper to [VIP]Steve: hi");
+        assertEquals("Steve", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.network.chat.Component.literal("Steve")).getString());
     }
 
     @Test void whisperName_enIncoming() {
-        var line = net.minecraft.text.Text.literal("[VIP]Steve whispers to you: hi");
-        assertEquals("[VIP]Steve", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.text.Text.literal("Steve")).getString());
+        var line = net.minecraft.network.chat.Component.literal("[VIP]Steve whispers to you: hi");
+        assertEquals("[VIP]Steve", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.network.chat.Component.literal("Steve")).getString());
     }
 
     @Test void whisperName_incomingResetsVanillaItalic() {
         // vanilla decorates whisper lines gray+italic; the extracted name must not
         // inherit the line decoration's italic (applies to child runs, hence mapStyle)
-        var line = net.minecraft.text.Text.literal("[称号]E33EPUS悄悄地对你说：hi")
-            .fillStyle(net.minecraft.text.Style.EMPTY.withItalic(true));
+        var line = net.minecraft.network.chat.Component.literal("[称号]E33EPUS悄悄地对你说：hi")
+            .withStyle(net.minecraft.network.chat.Style.EMPTY.withItalic(true));
         var name = ChatMessageStore.extractWhisperDisplayName(line,
-            net.minecraft.text.Text.literal("E33EPUS"));
+            net.minecraft.network.chat.Component.literal("E33EPUS"));
         assertEquals("[称号]E33EPUS", name.getString());
         var it = new boolean[]{true};
         name.visit((style, text) -> { if (style.isItalic()) it[0] = false; return java.util.Optional.empty(); },
-            net.minecraft.text.Style.EMPTY);
+            net.minecraft.network.chat.Style.EMPTY);
         assertTrue(it[0], "whisper sender name must not be italic");
     }
 
     @Test void whisperName_noTemplateFallsBack() {
-        var line = net.minecraft.text.Text.literal("Steve sends you something");
-        assertEquals("Steve", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.text.Text.literal("Steve")).getString());
+        var line = net.minecraft.network.chat.Component.literal("Steve sends you something");
+        assertEquals("Steve", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.network.chat.Component.literal("Steve")).getString());
     }
 
     @Test void whisperName_zhOutgoingPluginDecoratedSender() {
         // Some plugins echo the outgoing line with the SENDER's decorated name
         // in front ("[称号]E33EPUS悄悄地对Steve说") — extract it instead of the bare fallback.
-        var line = net.minecraft.text.Text.literal("[称号]E33EPUS悄悄地对Steve说：hi");
-        assertEquals("[称号]E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.text.Text.literal("E33EPUS")).getString());
+        var line = net.minecraft.network.chat.Component.literal("[称号]E33EPUS悄悄地对Steve说：hi");
+        assertEquals("[称号]E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.network.chat.Component.literal("E33EPUS")).getString());
     }
 
     @Test void whisperName_enOutgoingPluginDecoratedSender() {
-        var line = net.minecraft.text.Text.literal("[VIP]E33EPUS whisper to Steve: hi");
-        assertEquals("[VIP]E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.text.Text.literal("E33EPUS")).getString());
+        var line = net.minecraft.network.chat.Component.literal("[VIP]E33EPUS whisper to Steve: hi");
+        assertEquals("[VIP]E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.network.chat.Component.literal("E33EPUS")).getString());
     }
 
     @Test void whisperName_zhOutgoingVanillaStillFallsBack() {
         // vanilla "你悄悄地对X说" must keep falling back to self — the prefix "你" is
         // the pronoun, not a real name
-        var line = net.minecraft.text.Text.literal("你悄悄地对[称号]E33EPUS说：hi");
-        assertEquals("E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.text.Text.literal("E33EPUS")).getString());
+        var line = net.minecraft.network.chat.Component.literal("你悄悄地对[称号]E33EPUS说：hi");
+        assertEquals("E33EPUS", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.network.chat.Component.literal("E33EPUS")).getString());
     }
 
     @Test void whisperName_enOutgoingVanillaStillFallsBack() {
-        var line = net.minecraft.text.Text.literal("You whisper to [VIP]Steve: hi");
-        assertEquals("Steve", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.text.Text.literal("Steve")).getString());
+        var line = net.minecraft.network.chat.Component.literal("You whisper to [VIP]Steve: hi");
+        assertEquals("Steve", ChatMessageStore.extractWhisperDisplayName(line, net.minecraft.network.chat.Component.literal("Steve")).getString());
     }
 
     // ---- isRepostDuplicate: the server echoes a whisper twice (~15ms apart);
@@ -297,8 +297,8 @@ class ChatMessageStoreTest {
     private static ChatMessageStore.ChatMessage testMsg(boolean own, boolean system) {
         return new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("今天去打龙吗"),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("今天去打龙吗"),
             1782900000000L,
             own, system, null, null, "", 1, null, false, null, null);
     }
@@ -328,8 +328,8 @@ class ChatMessageStoreTest {
     @Test void jsonl_flagsCombinable() {
         var msg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("hi"),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("hi"),
             1782900000000L,
             true, false, null, null, "", 1, null, true, null, null);
         var back = ChatMessageStore.fromLine(ChatMessageStore.toLine(msg));
@@ -347,8 +347,8 @@ class ChatMessageStoreTest {
     @Test void jsonl_escapingRoundTrip() {
         var msg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("a\tb\nc\\d\r\nx"),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("a\tb\nc\\d\r\nx"),
             1782900000000L, false, false, null, null, "", 1, null, false, null, null);
         var back = ChatMessageStore.fromLine(ChatMessageStore.toLine(msg));
         assertNotNull(back);
@@ -358,8 +358,8 @@ class ChatMessageStoreTest {
     @Test void jsonl_optionalColumnsWhisperPartnerAndReply() {
         var msg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("hi"),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("hi"),
             1782900000000L,
             false, false, "引用的内容", "Alex", "", 1, "Steve", true, "Alex", null);
         var back = ChatMessageStore.fromLine(ChatMessageStore.toLine(msg));
@@ -374,8 +374,8 @@ class ChatMessageStoreTest {
     @Test void jsonl_uuidPersisted() {
         var msg = new ChatMessageStore.ChatMessage(
             java.util.UUID.nameUUIDFromBytes("steve".getBytes()),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("hi"),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("hi"),
             1782900000000L, false, false, null, null, "", 1, null, false, null, null);
         var back = ChatMessageStore.fromLine(ChatMessageStore.toLine(msg));
         assertNotNull(back);
@@ -388,18 +388,18 @@ class ChatMessageStoreTest {
         // transforms), so toLine degrades to plain-text fields here. The styled
         // path is exercised in-game.
         org.junit.jupiter.api.Assumptions.assumeTrue(
-            net.minecraft.client.MinecraftClient.getInstance() != null,
+            net.minecraft.client.Minecraft.getInstance() != null,
             "styled serialization requires a running Minecraft client");
-        var styled = net.minecraft.text.Text.literal("Steve")
-            .formatted(net.minecraft.util.Formatting.AQUA);
+        var styled = net.minecraft.network.chat.Component.literal("Steve")
+            .withStyle(net.minecraft.ChatFormatting.AQUA);
         var msg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(), styled,
-            net.minecraft.text.Text.literal("hi"),
+            net.minecraft.network.chat.Component.literal("hi"),
             1782900000000L, false, false, null, null, "", 1, null, false, null, null);
         var back = ChatMessageStore.fromLine(ChatMessageStore.toLine(msg));
         assertNotNull(back);
         assertEquals("Steve", back.senderName().getString());
-        assertEquals(net.minecraft.util.Formatting.AQUA.getColorValue(),
+        assertEquals(net.minecraft.ChatFormatting.AQUA.getColor(),
             back.senderName().getStyle().getColor().getRgb());
     }
 
@@ -407,15 +407,15 @@ class ChatMessageStoreTest {
         // Same headless limitation as styledSenderStylePreserved (HoverEvent's
         // class init touches ItemStack/registries) — in-game verified.
         org.junit.jupiter.api.Assumptions.assumeTrue(
-            net.minecraft.client.MinecraftClient.getInstance() != null,
+            net.minecraft.client.Minecraft.getInstance() != null,
             "click/hover serialization requires a running Minecraft client");
-        var click = new net.minecraft.text.ClickEvent(
-            net.minecraft.text.ClickEvent.Action.RUN_COMMAND, "/tp Steve 0 100 0");
-        var content = net.minecraft.text.Text.literal("传我一下")
-            .styled(s -> s.withClickEvent(click));
+        var click = new net.minecraft.network.chat.ClickEvent(
+            net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/tp Steve 0 100 0");
+        var content = net.minecraft.network.chat.Component.literal("传我一下")
+            .withStyle(s -> s.withClickEvent(click));
         var msg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("Steve"),
             content,
             1782900000000L, false, false, null, null, "", 1, null, false, null, null);
         var back = ChatMessageStore.fromLine(ChatMessageStore.toLine(msg));
@@ -433,8 +433,8 @@ class ChatMessageStoreTest {
     @Test void tsv_blankContentDropped() {
         var msg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("   "),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("   "),
             1782900000000L, false, false, null, null, "", 1, null, false, null, null);
         assertNull(ChatMessageStore.fromLine(ChatMessageStore.toLine(msg)));
     }
@@ -445,9 +445,9 @@ class ChatMessageStoreTest {
         var c = ChatMessageStore.parseStyledText("§6[称号]§bE33EPUS");
         // getString() is plain text; the colors live in the styled siblings
         assertEquals("[称号]E33EPUS", c.getString());
-        assertEquals(net.minecraft.util.Formatting.GOLD.getColorValue(),
+        assertEquals(net.minecraft.ChatFormatting.GOLD.getColor(),
             c.getSiblings().get(0).getStyle().getColor().getRgb());
-        assertEquals(net.minecraft.util.Formatting.AQUA.getColorValue(),
+        assertEquals(net.minecraft.ChatFormatting.AQUA.getColor(),
             c.getSiblings().get(1).getStyle().getColor().getRgb());
     }
 
@@ -518,8 +518,8 @@ class ChatMessageStoreTest {
     @Test void sensitiveCommand_skippedFromLine() {
         var msg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("/login hunter2"),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("/login hunter2"),
             1782900000000L, false, false, null, null, "", 1, null, false, null, null);
         assertNull(ChatMessageStore.toLine(msg));
     }
@@ -583,7 +583,7 @@ class ChatMessageStoreTest {
     @Test void blocked_senderNameFallbackHits() {
         // Nickname plugins put the tab-list display name in senderName; exact match
         // on the full decorated string (list holds the display name as shown)
-        var decorated = net.minecraft.text.Text.literal("[VIP]Steve");
+        var decorated = net.minecraft.network.chat.Component.literal("[VIP]Steve");
         assertTrue(BlockList.isPlayerBlocked(null, decorated, List.of("[VIP]Steve")));
         assertTrue(BlockList.isPlayerBlocked("Alex", decorated, List.of("[vip]steve")));
         // Exact-name semantics: a bare profile name does NOT match a decorated display name
@@ -598,18 +598,18 @@ class ChatMessageStoreTest {
     @Test void blocked_purgeDropsSenderKeepsOwnAndSystem() throws Exception {
         var blockedMsg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("hello"),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("hello"),
             1L, false, false, null, null, "", 1, "Steve", false, null, null);
         var ownMsg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Me"),
-            net.minecraft.text.Text.literal("hi"),
+            net.minecraft.network.chat.Component.literal("Me"),
+            net.minecraft.network.chat.Component.literal("hi"),
             2L, true, false, null, null, "", 1, "Me", false, null, null);
         var sysMsg = new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("joined the game"),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("joined the game"),
             3L, false, true, null, null, "", 1, "Steve", false, null, null);
 
         var field = ChatMessageStore.class.getDeclaredField("messages");
@@ -636,14 +636,14 @@ class ChatMessageStoreTest {
     @Test void antiSpamMerge_identicalFollowUpDropsStaleReplyBlock() throws Exception {
         clearMessagesAndMetas();
         var uuid = java.util.UUID.randomUUID();
-        var sender = net.minecraft.text.Text.literal("Steve");
+        var sender = net.minecraft.network.chat.Component.literal("Steve");
         // Server pre-registers a quote meta for the first message
         ChatMessageStore.applyChatMeta(uuid, "Steve", String.valueOf("妈妈".hashCode()),
             "A", "A的话", List.of());
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("妈妈"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("妈妈"),
             uuid, sender, false, "Steve", false, null, false);
         // Identical follow-up with no quote meta
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("妈妈"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("妈妈"),
             uuid, sender, false, "Steve", false, null, false);
 
         var field = ChatMessageStore.class.getDeclaredField("messages");
@@ -660,15 +660,15 @@ class ChatMessageStoreTest {
     @Test void antiSpamMerge_quotedFollowUpKeepsReplyBlock() throws Exception {
         clearMessagesAndMetas();
         var uuid = java.util.UUID.randomUUID();
-        var sender = net.minecraft.text.Text.literal("Steve");
+        var sender = net.minecraft.network.chat.Component.literal("Steve");
         // First message quoted, follow-up identical AND quoted again
         ChatMessageStore.applyChatMeta(uuid, "Steve", String.valueOf("妈妈".hashCode()),
             "A", "A的话", List.of());
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("妈妈"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("妈妈"),
             uuid, sender, false, "Steve", false, null, false);
         ChatMessageStore.applyChatMeta(uuid, "Steve", String.valueOf("妈妈".hashCode()),
             "A", "A的话", List.of());
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("妈妈"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("妈妈"),
             uuid, sender, false, "Steve", false, null, false);
 
         var field = ChatMessageStore.class.getDeclaredField("messages");
@@ -686,14 +686,14 @@ class ChatMessageStoreTest {
         clearMessagesAndMetas();
         final int[] calls = {0};
         ChatMessageStore.setMessageEffectObserver(new ChatMessageStore.MessageEffectObserver() {
-            @Override public void onSystemMessage(net.minecraft.text.Text content, int index) { calls[0]++; }
-            @Override public void onMentionOrQuote(net.minecraft.text.Text content, ChatMessageStore.SenderMeta meta, int index, String replySender) {}
-            @Override public void onWhisperReceived(java.util.UUID senderUUID, net.minecraft.text.Text senderName, net.minecraft.text.Text content, int index) {}
+            @Override public void onSystemMessage(net.minecraft.network.chat.Component content, int index) { calls[0]++; }
+            @Override public void onMentionOrQuote(net.minecraft.network.chat.Component content, ChatMessageStore.SenderMeta meta, int index, String replySender) {}
+            @Override public void onWhisperReceived(java.util.UUID senderUUID, net.minecraft.network.chat.Component senderName, net.minecraft.network.chat.Component content, int index) {}
             @Override public void onPublicChatSound() {}
             @Override public void onQuoteSound() {}
         });
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("死亡消息"),
-            new java.util.UUID(0, 0), net.minecraft.text.Text.literal("系统"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("死亡消息"),
+            new java.util.UUID(0, 0), net.minecraft.network.chat.Component.literal("系统"),
             true, "系统", false, null, false);
         assertEquals(1, calls[0], "system banner enabled (default) must delegate to the observer");
         ChatMessageStore.setMessageEffectObserver(null);
@@ -721,13 +721,13 @@ class ChatMessageStoreTest {
     @Test void applyChatMeta_lateQuoteDoesNotTagMergedBubble() throws Exception {
         clearMessagesAndMetas();
         var bUuid = java.util.UUID.randomUUID();
-        var sender = net.minecraft.text.Text.literal("B");
+        var sender = net.minecraft.network.chat.Component.literal("B");
         String hash = String.valueOf("？".hashCode());
         // First send: unquoted (this test isolates the late-ChatMeta path)
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("？"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("？"),
             bUuid, sender, false, "B", false, null, false);
         // Identical follow-up: anti-spam merges into one bubble, no quote block
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("？"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("？"),
             bUuid, sender, false, "B", false, null, false);
         // The first send's ChatMeta arrives after the merge
         ChatMessageStore.applyChatMeta(bUuid, "B", hash, "A", "妈妈", List.of());
@@ -746,9 +746,9 @@ class ChatMessageStoreTest {
     @Test void applyChatMeta_quoteStillTagsPlainMessage() throws Exception {
         clearMessagesAndMetas();
         var bUuid = java.util.UUID.randomUUID();
-        var sender = net.minecraft.text.Text.literal("B");
+        var sender = net.minecraft.network.chat.Component.literal("B");
         String hash = String.valueOf("？".hashCode());
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("？"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("？"),
             bUuid, sender, false, "B", false, null, false);
         ChatMessageStore.applyChatMeta(bUuid, "B", hash, "A", "妈妈", List.of());
 
@@ -768,14 +768,14 @@ class ChatMessageStoreTest {
     @Test void quoteInheritance_differentContentSecondSendIsClean() throws Exception {
         clearMessagesAndMetas();
         var uuid = java.util.UUID.randomUUID();
-        var sender = net.minecraft.text.Text.literal("B");
+        var sender = net.minecraft.network.chat.Component.literal("B");
         // First send: quoted (server pre-registers quote meta for "？")
         ChatMessageStore.applyChatMeta(uuid, "B", String.valueOf("？".hashCode()),
             "A", "妈妈", List.of());
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("？"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("？"),
             uuid, sender, false, "B", false, null, false);
         // Second send: different content, no quote — no merge, independent bubble
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("别的"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("别的"),
             uuid, sender, false, "B", false, null, false);
 
         var field = ChatMessageStore.class.getDeclaredField("messages");
@@ -797,10 +797,10 @@ class ChatMessageStoreTest {
     @Test void applyChatMeta_offlinePlayerMatchesByRawName() throws Exception {
         clearMessagesAndMetas();
         var bUuid = java.util.UUID.randomUUID();
-        var sender = net.minecraft.text.Text.literal("B");
+        var sender = net.minecraft.network.chat.Component.literal("B");
         String hash = String.valueOf("？".hashCode());
         // B's message lands with UUID(0,0) on A's client (offline fallback)
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("？"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("？"),
             new java.util.UUID(0, 0), sender, false, "B", false, null, false);
         // Server broadcasts B's real UUID + name; UUID won't match, name must
         ChatMessageStore.applyChatMeta(bUuid, "B", hash, "A", "妈妈", List.of());
@@ -817,10 +817,10 @@ class ChatMessageStoreTest {
     @Test void applyChatMeta_uuidMatchStillWorksWhenNameAbsent() throws Exception {
         clearMessagesAndMetas();
         var bUuid = java.util.UUID.randomUUID();
-        var sender = net.minecraft.text.Text.literal("B");
+        var sender = net.minecraft.network.chat.Component.literal("B");
         String hash = String.valueOf("？".hashCode());
         // Normal (online) path: UUID matches, senderName empty in the meta
-        ChatMessageStore.addMessage(net.minecraft.text.Text.literal("？"),
+        ChatMessageStore.addMessage(net.minecraft.network.chat.Component.literal("？"),
             bUuid, sender, false, "B", false, null, false);
         ChatMessageStore.applyChatMeta(bUuid, "", hash, "A", "妈妈", List.of());
 
@@ -848,8 +848,8 @@ class ChatMessageStoreTest {
         var messages = (List<ChatMessageStore.ChatMessage>) field.get(null);
         messages.add(new ChatMessageStore.ChatMessage(
             java.util.UUID.randomUUID(),
-            net.minecraft.text.Text.literal("Steve"),
-            net.minecraft.text.Text.literal("hello " + time),
+            net.minecraft.network.chat.Component.literal("Steve"),
+            net.minecraft.network.chat.Component.literal("hello " + time),
             time, false, false, null, null, "", 1, "Steve", false, null, null));
     }
 
@@ -957,7 +957,7 @@ class ChatMessageStoreTest {
 
     private static void addLocalRow(String sender, String content, long time) throws Exception {
         messageRows().add(new ChatMessageStore.ChatMessage(new java.util.UUID(0, 0),
-            net.minecraft.text.Text.literal(sender), net.minecraft.text.Text.literal(content),
+            net.minecraft.network.chat.Component.literal(sender), net.minecraft.network.chat.Component.literal(content),
             time, false, false, null, null, String.valueOf(content.hashCode()), 1,
             sender, false, null, null));
     }
@@ -1123,7 +1123,7 @@ class ChatMessageStoreTest {
         @SuppressWarnings("unchecked")
         var rows = (List<ChatMessageStore.ChatMessage>) field.get(null);
         rows.add(new ChatMessageStore.ChatMessage(new java.util.UUID(0, 0),
-            net.minecraft.text.Text.literal(sender), net.minecraft.text.Text.literal(content),
+            net.minecraft.network.chat.Component.literal(sender), net.minecraft.network.chat.Component.literal(content),
             time, false, false, null, null, String.valueOf(content.hashCode()), dupCount,
             sender, false, null, group));
     }

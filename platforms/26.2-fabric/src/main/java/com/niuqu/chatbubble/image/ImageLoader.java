@@ -9,16 +9,14 @@ import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.client.texture.TextureManager;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 
 /**
@@ -96,10 +94,10 @@ public final class ImageLoader {
     public static void setEnabled(boolean e) {
         enabled = e;
         if (!e) {
-            MinecraftClient.getInstance().execute(() -> {
-                TextureManager tm = MinecraftClient.getInstance().getTextureManager();
+            Minecraft.getInstance().execute(() -> {
+                TextureManager tm = Minecraft.getInstance().getTextureManager();
                 for (String u : CACHE.keySet()) {
-                    tm.destroyTexture(Identifier.of("e33chat", "img/" + hash(u)));
+                    tm.release(ResourceLocation.fromNamespaceAndPath("e33chat", "img/" + hash(u)));
                 }
                 CACHE.clear();
                 LRU.clear();
@@ -150,9 +148,9 @@ public final class ImageLoader {
                 it.remove();
                 CACHE.remove(url, e);
                 if (e.state() == ImageEntry.State.LOADED && e.textureId() != null) {
-                    Identifier id = e.textureId();
-                    MinecraftClient.getInstance().execute(() -> {
-                        MinecraftClient.getInstance().getTextureManager().destroyTexture(id);
+                    ResourceLocation id = e.textureId();
+                    Minecraft.getInstance().execute(() -> {
+                        Minecraft.getInstance().getTextureManager().release(id);
                     });
                 }
                 VERSION.incrementAndGet();
@@ -265,7 +263,8 @@ public final class ImageLoader {
             byte[] body;
             long t1;
             if (url.startsWith("e33chat://")) {
-                body = MediaClient.fetch(url.substring("e33chat://media/".length()));
+                body = com.niuqu.chatbubble.image.MediaClient.fetch(
+                    url.substring("e33chat://media/".length()));
                 t1 = System.currentTimeMillis();
                 if (body == null) {
                     entry.markFailed("server media fetch failed");
@@ -320,7 +319,7 @@ public final class ImageLoader {
 
             final RasterImageDecoder.DecodedImage uploadImage = decoded;
             // Upload on the render thread, then flip state.
-            MinecraftClient.getInstance().execute(() -> {
+            Minecraft.getInstance().execute(() -> {
                 if (entry.state() != ImageEntry.State.LOADING) {
                     uploadImage.image().close();
                     LOGGER.info("[e33chat] image upload SKIPPED (state {}) for {}", entry.state(), url);
@@ -331,10 +330,10 @@ public final class ImageLoader {
                 // Re-register unconditionally (destroy first to avoid leaking the
                 // previous NativeImageBackedTexture on cache eviction + reload).
                 try {
-                    Identifier id = Identifier.of("e33chat", "img/" + hash(url));
-                    TextureManager tm = MinecraftClient.getInstance().getTextureManager();
-                    tm.destroyTexture(id);
-                    tm.registerTexture(id, new NativeImageBackedTexture(uploadImage.image()));
+                    ResourceLocation id = ResourceLocation.fromNamespaceAndPath("e33chat", "img/" + hash(url));
+                    TextureManager tm = Minecraft.getInstance().getTextureManager();
+                    tm.release(id);
+                    tm.register(id, new net.minecraft.client.renderer.texture.DynamicTexture(uploadImage.image()));
                     entry.markLoaded(id, uploadImage.image());
                     LOGGER.info("[e33chat] image upload OK {} -> {}x{} @ {}", url, entry.width(), entry.height(), id);
                 } catch (Throwable t) {

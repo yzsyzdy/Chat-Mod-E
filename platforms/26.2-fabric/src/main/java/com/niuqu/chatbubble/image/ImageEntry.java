@@ -1,7 +1,7 @@
 package com.niuqu.chatbubble.image;
 
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.util.Identifier;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Loading state of one image URL. Texture upload happens on the render
@@ -12,7 +12,7 @@ public final class ImageEntry {
 
     private final String url;
     private volatile State state = State.LOADING;
-    private volatile Identifier textureId;
+    private volatile ResourceLocation textureId;
     private volatile int width;
     private volatile int height;
     private volatile String failure;
@@ -24,13 +24,13 @@ public final class ImageEntry {
 
     public String url() { return url; }
     public State state() { return state; }
-    public Identifier textureId() { return textureId; }
+    public ResourceLocation textureId() { return textureId; }
     public int width() { return width; }
     public int height() { return height; }
     public String failure() { return failure; }
     public long failedAtMillis() { return failedAtMillis; }
 
-    synchronized void markLoaded(Identifier id, NativeImage img) {
+    synchronized void markLoaded(ResourceLocation id, NativeImage img) {
         this.textureId = id;
         this.width = img.getWidth();
         this.height = img.getHeight();

@@ -5,9 +5,9 @@ import com.niuqu.chatbubble.image.BracketCodec.ImageRef;
 import com.niuqu.chatbubble.image.BracketCodec.ParseResult;
 import com.niuqu.chatbubble.image.ImageLoader;
 import java.util.List;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +16,7 @@ class BracketCodecTest {
 
     @Test
     void cicodeTagIsParsed() {
-        ParseResult r = BracketCodec.parse(Text.literal("hi [[CICode,url=https://a.com/x.png]] there"));
+        ParseResult r = BracketCodec.parse(Component.literal("hi [[CICode,url=https://a.com/x.png]] there"));
         assertEquals(1, r.images().size());
         assertEquals("https://a.com/x.png", r.images().get(0).url());
         assertEquals("hi  there", r.textWithoutImages().getString());
@@ -24,7 +24,7 @@ class BracketCodecTest {
 
     @Test
     void chatUpgradeTagIsParsed() {
-        ParseResult r = BracketCodec.parse(Text.literal("[[ChatUpgrade,url=http://b.com/y.jpg,name=pic]]"));
+        ParseResult r = BracketCodec.parse(Component.literal("[[ChatUpgrade,url=http://b.com/y.jpg,name=pic]]"));
         assertEquals(1, r.images().size());
         assertEquals("http://b.com/y.jpg", r.images().get(0).url());
         assertEquals("pic", r.images().get(0).name());
@@ -33,14 +33,14 @@ class BracketCodecTest {
 
     @Test
     void tagMatchingIsCaseInsensitive() {
-        ParseResult r = BracketCodec.parse(Text.literal("[[cicode,url=https://a.com/x.png]]"));
+        ParseResult r = BracketCodec.parse(Component.literal("[[cicode,url=https://a.com/x.png]]"));
         assertEquals(1, r.images().size());
         assertEquals("https://a.com/x.png", r.images().get(0).url());
     }
 
     @Test
     void multipleImagesInOneMessage() {
-        ParseResult r = BracketCodec.parse(Text.literal(
+        ParseResult r = BracketCodec.parse(Component.literal(
             "a [[CICode,url=https://a.com/1.png]] b [[ChatUpgrade,url=https://a.com/2.png]] c"));
         assertEquals(2, r.images().size());
         assertEquals("https://a.com/1.png", r.images().get(0).url());
@@ -50,8 +50,8 @@ class BracketCodecTest {
 
     @Test
     void surroundingStyleIsPreserved() {
-        Text input = Text.literal("plain ").append(
-            Text.literal("code [[CICode,url=https://a.com/x.png]] tail").formatted(Formatting.RED));
+        Component input = Component.literal("plain ").append(
+            Component.literal("code [[CICode,url=https://a.com/x.png]] tail").withStyle(ChatFormatting.RED));
         ParseResult r = BracketCodec.parse(input);
         assertEquals(1, r.images().size());
         assertEquals("plain code  tail", r.textWithoutImages().getString());
@@ -69,21 +69,21 @@ class BracketCodecTest {
 
     @Test
     void imageOnlyMessageLeavesEmptyText() {
-        ParseResult r = BracketCodec.parse(Text.literal("[[CICode,url=https://a.com/x.png]]"));
+        ParseResult r = BracketCodec.parse(Component.literal("[[CICode,url=https://a.com/x.png]]"));
         assertEquals(1, r.images().size());
         assertEquals("", r.textWithoutImages().getString());
     }
 
     @Test
     void missingUrlIsIgnored() {
-        ParseResult r = BracketCodec.parse(Text.literal("[[CICode,name=only]] text"));
+        ParseResult r = BracketCodec.parse(Component.literal("[[CICode,name=only]] text"));
         assertTrue(r.images().isEmpty());
         assertEquals(" text", r.textWithoutImages().getString());
     }
 
     @Test
     void noBracketReturnsInputUnchanged() {
-        Text input = Text.literal("just text").formatted(Formatting.BLUE);
+        Component input = Component.literal("just text").withStyle(ChatFormatting.BLUE);
         ParseResult r = BracketCodec.parse(input);
         assertTrue(r.images().isEmpty());
         assertSame(input, r.textWithoutImages());
@@ -91,14 +91,14 @@ class BracketCodecTest {
 
     @Test
     void nonImageTypeStaysStrippedNotRendered() {
-        ParseResult r = BracketCodec.parse(Text.literal("[[ChatUpgrade,url=https://a.com/s.mp3,type=audio]] x"));
+        ParseResult r = BracketCodec.parse(Component.literal("[[ChatUpgrade,url=https://a.com/s.mp3,type=audio]] x"));
         assertTrue(r.images().isEmpty(), "audio refs are not image cards");
         assertEquals(" x", r.textWithoutImages().getString());
     }
 
     @Test
     void parseOrExtractFallsBackToPlainText() {
-        Text input = Text.literal("no image here");
+        Component input = Component.literal("no image here");
         ParseResult r = BracketCodec.parseOrExtract(input);
         assertTrue(r.images().isEmpty());
         assertSame(input, r.textWithoutImages());
@@ -110,17 +110,17 @@ class BracketCodecTest {
         // in the headless Fabric unit-test environment — skip gracefully there
         // (this path is covered by the Forge/NeoForge unit tests).
         try {
-            new net.minecraft.text.HoverEvent(net.minecraft.text.HoverEvent.Action.SHOW_TEXT,
-                Text.literal("probe"));
+            new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
+                Component.literal("probe"));
         } catch (Throwable t) {
             org.junit.jupiter.api.Assumptions.abort("HoverEvent unavailable in this test environment");
             return;
         }
         // EasyBot relays images as a visible summary run whose SHOW_TEXT hover
         // contains the [[CICode,...]] bracket (ChatImage-compatible).
-        Text input = Text.literal("[图片]").setStyle(Style.EMPTY.withHoverEvent(
-            new net.minecraft.text.HoverEvent(net.minecraft.text.HoverEvent.Action.SHOW_TEXT,
-                Text.literal("[[CICode,url=https://a.com/x.png]]"))));
+        Component input = Component.literal("[图片]").setStyle(Style.EMPTY.withHoverEvent(
+            new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
+                Component.literal("[[CICode,url=https://a.com/x.png]]"))));
         ParseResult r = BracketCodec.parseOrExtract(input);
         assertEquals(1, r.images().size());
         assertEquals("https://a.com/x.png", r.images().get(0).url());
@@ -129,8 +129,8 @@ class BracketCodecTest {
 
     @Test
     void toPlaceholderReplacesCodes() {
-        Text input = Text.literal("hi [[CICode,url=https://a.com/x.png]] there");
-        Text out = BracketCodec.toPlaceholderText(input);
+        Component input = Component.literal("hi [[CICode,url=https://a.com/x.png]] there");
+        Component out = BracketCodec.toPlaceholderText(input);
         String s = out.getString();
         // headless: the translatable placeholder renders as its key; in-game it
         // is "[图片]"/"[Image]". Either way the code itself must be gone.
@@ -142,7 +142,7 @@ class BracketCodecTest {
 
     @Test
     void toPlaceholderKeepsPlainTextUnchanged() {
-        Text input = Text.literal("just text");
+        Component input = Component.literal("just text");
         assertSame(input, BracketCodec.toPlaceholderText(input));
     }
 

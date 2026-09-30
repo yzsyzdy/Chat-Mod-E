@@ -1,11 +1,10 @@
 package com.niuqu.chatbubble.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
-
 import java.util.UUID;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * S2C group chat message, sent only to members running the mod (vanilla
@@ -14,30 +13,30 @@ import java.util.UUID;
  */
 public record GroupChatPayload(UUID senderUUID, String senderName, String groupName,
                                String content, String quoteSender, String quoteContent)
-        implements CustomPayload {
+        implements CustomPacketPayload {
 
     // Server caps content; the codec below caps reads via readString(max)
     private static final int MAX_TEXT = 2048;
 
-    public static final CustomPayload.Id<GroupChatPayload> ID =
-        new CustomPayload.Id<>(Identifier.of("e33chat", "group_chat"));
+    public static final CustomPacketPayload.Type<GroupChatPayload> ID =
+        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "group_chat"));
 
-    public static final PacketCodec<PacketByteBuf, GroupChatPayload> CODEC = PacketCodec.of(
+    public static final StreamCodec<FriendlyByteBuf, GroupChatPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {
-            buf.writeUuid(value.senderUUID);
-            buf.writeString(value.senderName, 256);
-            buf.writeString(value.groupName, 64);
-            buf.writeString(value.content, MAX_TEXT);
-            buf.writeString(value.quoteSender != null ? value.quoteSender : "", 256);
-            buf.writeString(value.quoteContent != null ? value.quoteContent : "", MAX_TEXT);
+            buf.writeUUID(value.senderUUID);
+            buf.writeUtf(value.senderName, 256);
+            buf.writeUtf(value.groupName, 64);
+            buf.writeUtf(value.content, MAX_TEXT);
+            buf.writeUtf(value.quoteSender != null ? value.quoteSender : "", 256);
+            buf.writeUtf(value.quoteContent != null ? value.quoteContent : "", MAX_TEXT);
         },
         buf -> new GroupChatPayload(
-            buf.readUuid(),
-            buf.readString(256),
-            buf.readString(64),
-            buf.readString(MAX_TEXT),
-            blankToNull(buf.readString(256)),
-            blankToNull(buf.readString(MAX_TEXT))
+            buf.readUUID(),
+            buf.readUtf(256),
+            buf.readUtf(64),
+            buf.readUtf(MAX_TEXT),
+            blankToNull(buf.readUtf(256)),
+            blankToNull(buf.readUtf(MAX_TEXT))
         )
     );
 
@@ -46,16 +45,16 @@ public record GroupChatPayload(UUID senderUUID, String senderName, String groupN
     }
 
     @Override
-    public CustomPayload.Id<? extends CustomPayload> getId() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 
     /** Client-side hook, invoked from ChatBubbleClientSetup's receiver. */
     public static void handleClient(GroupChatPayload payload) {
         com.niuqu.chatbubble.store.ChatMessageStore.addGroupMessage(
-            net.minecraft.text.Text.literal(payload.content()),
+            net.minecraft.network.chat.Component.literal(payload.content()),
             payload.senderUUID(),
-            net.minecraft.text.Text.literal(payload.senderName()),
+            net.minecraft.network.chat.Component.literal(payload.senderName()),
             payload.groupName(), payload.quoteSender(), payload.quoteContent());
     }
 }

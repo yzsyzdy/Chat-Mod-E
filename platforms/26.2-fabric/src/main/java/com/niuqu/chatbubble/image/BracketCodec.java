@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 
 /**
  * Parses image bracket codes out of chat content.
@@ -17,9 +18,9 @@ import net.minecraft.util.Formatting;
  *   [[CICode,url=...,name=...]]        (ChatImage)
  *   [[ChatUpgrade,url=...,name=...,type=...]]  (third-party rich-message mod; type=image assumed)
  *
- * {@link #strip(Text)} removes the bracket blocks from the styled component
+ * {@link #parse(Component)} removes the bracket blocks from the styled component
  * tree (keeping the surrounding styles) and returns the extracted image refs.
- * {@link #extractFromHover(Text)} recovers image URLs from legacy history
+ * {@link #extractFromHover(Component)} recovers image URLs from legacy history
  * lines that were stored as ChatImage-converted components (green "[Image]"
  * text carrying a show_chatimage hover event) before 2.3.10.
  */
@@ -32,7 +33,7 @@ public final class BracketCodec {
         public ImageRef(String url, String name) { this(url, name, false); }
     }
 
-    public record ParseResult(Text textWithoutImages, List<ImageRef> images) {}
+    public record ParseResult(Component textWithoutImages, List<ImageRef> images) {}
 
     private BracketCodec() {}
 
@@ -41,14 +42,14 @@ public final class BracketCodec {
      * remembers the segment index it appeared in; segments render in order,
      * images render after the text as card rows.
      */
-    public static ParseResult parse(Text text) {
+    public static ParseResult parse(Component text) {
         if (text == null) return new ParseResult(text, List.of());
         String plain = text.getString();
         Matcher m = BRACKET.matcher(plain);
         if (!m.find()) return new ParseResult(text, List.of());
 
         List<ImageRef> images = new ArrayList<>();
-        MutableText out = Text.empty();
+        MutableComponent out = Component.empty();
         boolean[] hasText = {false};
         // Walk the styled tree once, copying every character range that is not
         // part of a bracket block (bracket blocks are stripped, styles kept).
@@ -57,7 +58,7 @@ public final class BracketCodec {
             Matcher local = BRACKET.matcher(part);
             while (local.find()) {
                 if (local.start() > partStart) {
-                    out.append(Text.literal(part.substring(partStart, local.start())).fillStyle(style));
+                    out.append(Component.literal(part.substring(partStart, local.start())).withStyle(style));
                     hasText[0] = true;
                 }
                 ImageRef ref = parseAttrs(local.group(2), local.group(1));
@@ -65,7 +66,7 @@ public final class BracketCodec {
                 partStart = local.end();
             }
             if (partStart < part.length()) {
-                out.append(Text.literal(part.substring(partStart)).fillStyle(style));
+                out.append(Component.literal(part.substring(partStart)).withStyle(style));
                 hasText[0] = true;
             }
             return Optional.empty();
@@ -75,7 +76,7 @@ public final class BracketCodec {
         // fall back to a plain-text strip so the code never shows raw in the bubble.
         if (images.isEmpty() && !hasText[0]) {
             String stripped = m.replaceAll("");
-            return new ParseResult(Text.literal(stripped).setStyle(text.getStyle()), List.of());
+            return new ParseResult(Component.literal(stripped).withStyle(text.getStyle()), List.of());
         }
         return new ParseResult(out, images);
     }
@@ -84,19 +85,19 @@ public final class BracketCodec {
      * Bubble-side entry: strips bracket codes (new format) or ChatImage hover
      * components (legacy history) and returns the image refs to render.
      */
-    public static ParseResult parseOrExtract(Text text) {
+    public static ParseResult parseOrExtract(Component text) {
         ParseResult r = parse(text);
         if (!r.images().isEmpty() || text == null) return r;
         List<ImageRef> refs = extractFromHover(text);
         if (refs.isEmpty()) refs = extractFromShowTextHover(text);
         if (refs.isEmpty()) return r;
-        MutableText out = Text.empty();
+        MutableComponent out = Component.empty();
         text.visit((style, part) -> {
-            net.minecraft.text.HoverEvent hover = style.getHoverEvent();
+            HoverEvent hover = style.getHoverEvent();
             if (hover != null && (isChatImageHover(hover) || isEasyBotCICodeHover(hover))) {
                 return Optional.empty(); // drop the [Image]/summary placeholder text
             }
-            out.append(Text.literal(part).fillStyle(style));
+            out.append(Component.literal(part).withStyle(style));
             return Optional.empty();
         }, Style.EMPTY);
         return new ParseResult(out, refs);
@@ -107,25 +108,25 @@ public final class BracketCodec {
      * ("[图片]"/"[Image]") while keeping the surrounding styles. Used when
      * image receiving is disabled — no download is ever triggered.
      */
-    public static Text toPlaceholderText(Text text) {
+    public static Component toPlaceholderText(Component text) {
         if (text == null) return null;
         Matcher m = BRACKET.matcher(text.getString());
         if (!m.find()) return text;
-        MutableText out = Text.empty();
-        Text placeholder = Text.translatable("e33chat.image.placeholder")
-            .formatted(Formatting.GREEN);
+        MutableComponent out = Component.empty();
+        Component placeholder = Component.translatable("e33chat.image.placeholder")
+            .withStyle(ChatFormatting.GREEN);
         text.visit((style, part) -> {
             int partStart = 0;
             Matcher local = BRACKET.matcher(part);
             while (local.find()) {
                 if (local.start() > partStart) {
-                    out.append(Text.literal(part.substring(partStart, local.start())).fillStyle(style));
+                    out.append(Component.literal(part.substring(partStart, local.start())).withStyle(style));
                 }
-                out.append(placeholder.copy().fillStyle(style));
+                out.append(placeholder.copy().withStyle(style));
                 partStart = local.end();
             }
             if (partStart < part.length()) {
-                out.append(Text.literal(part.substring(partStart)).fillStyle(style));
+                out.append(Component.literal(part.substring(partStart)).withStyle(style));
             }
             return Optional.empty();
         }, Style.EMPTY);
@@ -163,11 +164,11 @@ public final class BracketCodec {
      * "[Image]" text whose style carries a show_chatimage hover event whose
      * custom value is a JSON object like {"url":...,"name":...}.
      */
-    public static List<ImageRef> extractFromHover(Text text) {
+    public static List<ImageRef> extractFromHover(Component text) {
         if (text == null) return List.of();
         List<ImageRef> out = new ArrayList<>();
         text.visit((style, part) -> {
-            net.minecraft.text.HoverEvent hover = style.getHoverEvent();
+            HoverEvent hover = style.getHoverEvent();
             if (hover != null && isChatImageHover(hover)) {
                 String url = readUrlFromHover(hover);
                 if (url != null && !url.isBlank()) {
@@ -185,11 +186,11 @@ public final class BracketCodec {
      * {@code [[CICode,url=...,name=...]]} bracket. ChatImage understands this
      * format; E33Chat now does too.
      */
-    public static List<ImageRef> extractFromShowTextHover(Text text) {
+    public static List<ImageRef> extractFromShowTextHover(Component text) {
         if (text == null) return List.of();
         List<ImageRef> out = new ArrayList<>();
         text.visit((style, part) -> {
-            net.minecraft.text.HoverEvent hover = style.getHoverEvent();
+            HoverEvent hover = style.getHoverEvent();
             if (hover != null && isEasyBotCICodeHover(hover)) {
                 String tooltip = hoverText(hover);
                 if (tooltip != null) {
@@ -205,9 +206,9 @@ public final class BracketCodec {
         return out;
     }
 
-    private static boolean isEasyBotCICodeHover(net.minecraft.text.HoverEvent hover) {
+    private static boolean isEasyBotCICodeHover(HoverEvent hover) {
         try {
-            if (hover.getAction() != net.minecraft.text.HoverEvent.Action.SHOW_TEXT) return false;
+            if (hover.getAction() != HoverEvent.Action.SHOW_TEXT) return false;
             String tooltip = hoverText(hover);
             return tooltip != null && BRACKET.matcher(tooltip).find();
         } catch (Throwable t) {
@@ -215,10 +216,10 @@ public final class BracketCodec {
         }
     }
 
-    private static String hoverText(net.minecraft.text.HoverEvent hover) {
+    private static String hoverText(HoverEvent hover) {
         try {
-            Object value = hover.getValue(net.minecraft.text.HoverEvent.Action.SHOW_TEXT);
-            if (value instanceof Text c) return c.getString();
+            Object value = hover.getValue(HoverEvent.Action.SHOW_TEXT);
+            if (value instanceof Component c) return c.getString();
             if (value instanceof String s) return s;
         } catch (Throwable t) {
             return null;
@@ -226,7 +227,7 @@ public final class BracketCodec {
         return null;
     }
 
-    private static boolean isChatImageHover(net.minecraft.text.HoverEvent hover) {
+    private static boolean isChatImageHover(HoverEvent hover) {
         try {
             if (String.valueOf(hover.getAction()).toLowerCase(java.util.Locale.ROOT).contains("chatimage")) return true;
             // Some ChatImage builds ship an Action whose toString() is not the
@@ -239,7 +240,7 @@ public final class BracketCodec {
         }
     }
 
-    private static String readUrlFromHover(net.minecraft.text.HoverEvent hover) {
+    private static String readUrlFromHover(HoverEvent hover) {
         try {
             Object value = hover.getValue(hover.getAction());
             // Custom actions carry whatever their codec decoded. ChatImage's

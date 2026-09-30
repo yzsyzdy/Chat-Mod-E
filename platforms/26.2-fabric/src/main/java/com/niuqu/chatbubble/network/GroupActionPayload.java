@@ -1,16 +1,16 @@
 package com.niuqu.chatbubble.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * C2S group management action from the client's [+] popup.
  * 0=create, 1=join, 2=leave, 3=delete. The server answers with a fresh
  * GroupListPayload; errors go back as plain system messages.
  */
-public record GroupActionPayload(int action, String groupName) implements CustomPayload {
+public record GroupActionPayload(int action, String groupName) implements CustomPacketPayload {
 
     public static final int CREATE = 0;
     public static final int JOIN = 1;
@@ -19,19 +19,19 @@ public record GroupActionPayload(int action, String groupName) implements Custom
 
     private static final int MAX_NAME = 64;
 
-    public static final CustomPayload.Id<GroupActionPayload> ID =
-        new CustomPayload.Id<>(Identifier.of("e33chat", "group_action"));
+    public static final CustomPacketPayload.Type<GroupActionPayload> ID =
+        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "group_action"));
 
-    public static final PacketCodec<PacketByteBuf, GroupActionPayload> CODEC = PacketCodec.of(
+    public static final StreamCodec<FriendlyByteBuf, GroupActionPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {
             buf.writeVarInt(value.action);
-            buf.writeString(value.groupName, MAX_NAME);
+            buf.writeUtf(value.groupName, MAX_NAME);
         },
-        buf -> new GroupActionPayload(buf.readVarInt(), buf.readString(MAX_NAME))
+        buf -> new GroupActionPayload(buf.readVarInt(), buf.readUtf(MAX_NAME))
     );
 
     @Override
-    public CustomPayload.Id<? extends CustomPayload> getId() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 

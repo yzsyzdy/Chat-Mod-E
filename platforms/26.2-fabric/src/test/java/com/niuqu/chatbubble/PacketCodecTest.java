@@ -17,8 +17,8 @@ import io.netty.buffer.Unpooled;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,12 +31,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PacketCodecTest {
 
-    private static <T> void assertStable(T payload, PacketCodec<PacketByteBuf, T> codec) {
-        PacketByteBuf b1 = new PacketByteBuf(Unpooled.buffer());
+    private static <T> void assertStable(T payload, StreamCodec<FriendlyByteBuf, T> codec) {
+        FriendlyByteBuf b1 = new FriendlyByteBuf(Unpooled.buffer());
         codec.encode(b1, payload);
         byte[] original = Arrays.copyOf(b1.array(), b1.writerIndex());
         T decoded = codec.decode(b1);
-        PacketByteBuf b2 = new PacketByteBuf(Unpooled.buffer());
+        FriendlyByteBuf b2 = new FriendlyByteBuf(Unpooled.buffer());
         codec.encode(b2, decoded);
         byte[] after = Arrays.copyOf(b2.array(), b2.writerIndex());
         assertArrayEquals(original, after, "encode(decode(encode(p))) must equal encode(p)");
@@ -98,7 +98,7 @@ class PacketCodecTest {
     }
 
     private static byte[] historyBytes(HistoryPayload payload) {
-        PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
         HistoryPayload.CODEC.encode(buf, payload);
         return Arrays.copyOf(buf.array(), buf.writerIndex());
     }

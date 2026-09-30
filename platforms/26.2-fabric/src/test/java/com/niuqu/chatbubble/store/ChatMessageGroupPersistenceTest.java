@@ -1,10 +1,10 @@
 package com.niuqu.chatbubble.store;
 
 import com.niuqu.chatbubble.store.ChatMessageStore.ChatMessage;
-import net.minecraft.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import net.minecraft.network.chat.Component;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ChatMessageGroupPersistenceTest {
 
     private static ChatMessage msg(String group) {
-        return new ChatMessage(new UUID(0, 1), Text.literal("Steve"),
-            Text.literal("hello world"), 1700000000000L, false, false,
+        return new ChatMessage(new UUID(0, 1), Component.literal("Steve"),
+            Component.literal("hello world"), 1700000000000L, false, false,
             null, null, "h", 1, "Steve", false, null, group);
     }
 

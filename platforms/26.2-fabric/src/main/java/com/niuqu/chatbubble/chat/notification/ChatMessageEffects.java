@@ -2,11 +2,8 @@ package com.niuqu.chatbubble.chat.notification;
 
 import com.niuqu.chatbubble.ChatBubbleClientSetup;
 import com.niuqu.chatbubble.store.ChatMessageStore;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-
 import java.util.UUID;
+import net.minecraft.network.chat.Component;
 
 /**
  * 真实副作用实现（B4 上移）：横幅转发给 MentionNotificationController，
@@ -15,18 +12,18 @@ import java.util.UUID;
  */
 public class ChatMessageEffects implements ChatMessageStore.MessageEffectObserver {
     @Override
-    public void onMentionOrQuote(Text content, ChatMessageStore.SenderMeta meta,
+    public void onMentionOrQuote(Component content, ChatMessageStore.SenderMeta meta,
                                  int index, String replySender) {
         MentionNotificationController.INSTANCE.onMessageCaptured(content, meta, index, replySender);
     }
 
     @Override
-    public void onWhisperReceived(UUID senderUUID, Text senderName, Text content, int index) {
+    public void onWhisperReceived(UUID senderUUID, Component senderName, Component content, int index) {
         MentionNotificationController.INSTANCE.onWhisperReceived(senderUUID, senderName, content, index);
     }
 
     @Override
-    public void onSystemMessage(Text content, int index) {
+    public void onSystemMessage(Component content, int index) {
         MentionNotificationController.INSTANCE.onSystemMessage(content, index);
     }
 

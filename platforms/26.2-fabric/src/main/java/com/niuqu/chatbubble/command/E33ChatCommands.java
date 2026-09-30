@@ -9,11 +9,8 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.command.CommandSource;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,24 +84,24 @@ public class E33ChatCommands {
      * can never contain whitespace (server validation), so {@code msg} takes a
      * single rest argument and splits it at the first space.
      */
-    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<ServerCommandSource> groupCommands() {
-        var cm = net.minecraft.server.command.CommandManager.literal("group");
-        cm.then(net.minecraft.server.command.CommandManager.literal("list")
+    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> groupCommands() {
+        var cm = net.minecraft.commands.Commands.literal("group");
+        cm.then(net.minecraft.commands.Commands.literal("list")
             .executes(ctx -> groupList(ctx.getSource())));
-        cm.then(net.minecraft.server.command.CommandManager.literal("create")
-            .then(net.minecraft.server.command.CommandManager.argument("name", StringArgumentType.greedyString())
+        cm.then(net.minecraft.commands.Commands.literal("create")
+            .then(net.minecraft.commands.Commands.argument("name", StringArgumentType.greedyString())
                 .executes(ctx -> groupCreate(ctx.getSource(), greedyName(ctx, "name")))));
-        cm.then(net.minecraft.server.command.CommandManager.literal("join")
-            .then(net.minecraft.server.command.CommandManager.argument("name", StringArgumentType.greedyString())
+        cm.then(net.minecraft.commands.Commands.literal("join")
+            .then(net.minecraft.commands.Commands.argument("name", StringArgumentType.greedyString())
                 .executes(ctx -> groupJoin(ctx.getSource(), greedyName(ctx, "name")))));
-        cm.then(net.minecraft.server.command.CommandManager.literal("leave")
-            .then(net.minecraft.server.command.CommandManager.argument("name", StringArgumentType.greedyString())
+        cm.then(net.minecraft.commands.Commands.literal("leave")
+            .then(net.minecraft.commands.Commands.argument("name", StringArgumentType.greedyString())
                 .executes(ctx -> groupLeave(ctx.getSource(), greedyName(ctx, "name")))));
-        cm.then(net.minecraft.server.command.CommandManager.literal("delete")
-            .then(net.minecraft.server.command.CommandManager.argument("name", StringArgumentType.greedyString())
+        cm.then(net.minecraft.commands.Commands.literal("delete")
+            .then(net.minecraft.commands.Commands.argument("name", StringArgumentType.greedyString())
                 .executes(ctx -> groupDelete(ctx.getSource(), greedyName(ctx, "name")))));
-        cm.then(net.minecraft.server.command.CommandManager.literal("msg")
-            .then(net.minecraft.server.command.CommandManager.argument("rest", StringArgumentType.greedyString())
+        cm.then(net.minecraft.commands.Commands.literal("msg")
+            .then(net.minecraft.commands.Commands.argument("rest", StringArgumentType.greedyString())
                 .executes(ctx -> {
                     String[] parts = com.niuqu.chatbubble.server.GroupManager.splitSay(
                         StringArgumentType.getString(ctx, "rest"));
@@ -114,78 +111,78 @@ public class E33ChatCommands {
     }
 
     /** Trim the greedy name argument; names with inner whitespace fail validation. */
-    private static String greedyName(com.mojang.brigadier.context.CommandContext<ServerCommandSource> ctx, String key) {
+    private static String greedyName(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx, String key) {
         return StringArgumentType.getString(ctx, key).trim();
     }
 
-    private static net.minecraft.server.network.ServerPlayerEntity playerOrNull(ServerCommandSource src) {
+    private static net.minecraft.server.level.ServerPlayer playerOrNull(CommandSourceStack src) {
         return src.getPlayer();
     }
 
-    private static int groupList(ServerCommandSource src) {
+    private static int groupList(CommandSourceStack src) {
         var p = src.getPlayer();
         if (p == null) {
-            src.sendError(Text.translatable("e33chat.server.console_only"));
+            src.sendFailure(Component.translatable("e33chat.server.console_only"));
             return 0;
         }
         var groups = com.niuqu.chatbubble.server.GroupManager.snapshot();
         if (groups.isEmpty()) {
-            src.sendFeedback(() -> Text.translatable("e33chat.group.list_empty"), false);
+            src.sendSuccess(() -> Component.translatable("e33chat.group.list_empty"), false);
             return 1;
         }
         final int size = groups.size();
-        src.sendFeedback(() -> Text.translatable("e33chat.group.list_header", size), false);
+        src.sendSuccess(() -> Component.translatable("e33chat.group.list_header", size), false);
         for (var e : groups.entrySet()) {
             String gname = e.getKey();
-            boolean member = com.niuqu.chatbubble.server.GroupManager.isMember(gname, p.getUuid());
+            boolean member = com.niuqu.chatbubble.server.GroupManager.isMember(gname, p.getUUID());
             int count = e.getValue().members.size();
-            src.sendFeedback(() -> Text.translatable(member
+            src.sendSuccess(() -> Component.translatable(member
                 ? "e33chat.group.list_entry_joined" : "e33chat.group.list_entry",
                 gname, count), false);
         }
         return 1;
     }
 
-    private static int groupCreate(ServerCommandSource src, String name) {
+    private static int groupCreate(CommandSourceStack src, String name) {
         var p = playerOrNull(src);
-        if (p == null) { src.sendError(Text.translatable("e33chat.server.console_only")); return 0; }
+        if (p == null) { src.sendFailure(Component.translatable("e33chat.server.console_only")); return 0; }
         com.niuqu.chatbubble.server.GroupManager.create(p, name);
         return 1;
     }
 
-    private static int groupJoin(ServerCommandSource src, String name) {
+    private static int groupJoin(CommandSourceStack src, String name) {
         var p = playerOrNull(src);
-        if (p == null) { src.sendError(Text.translatable("e33chat.server.console_only")); return 0; }
+        if (p == null) { src.sendFailure(Component.translatable("e33chat.server.console_only")); return 0; }
         com.niuqu.chatbubble.server.GroupManager.join(p, name);
         return 1;
     }
 
-    private static int groupLeave(ServerCommandSource src, String name) {
+    private static int groupLeave(CommandSourceStack src, String name) {
         var p = playerOrNull(src);
-        if (p == null) { src.sendError(Text.translatable("e33chat.server.console_only")); return 0; }
+        if (p == null) { src.sendFailure(Component.translatable("e33chat.server.console_only")); return 0; }
         com.niuqu.chatbubble.server.GroupManager.leave(p, name);
         return 1;
     }
 
-    private static int groupDelete(ServerCommandSource src, String name) {
+    private static int groupDelete(CommandSourceStack src, String name) {
         var p = playerOrNull(src);
-        if (p == null) { src.sendError(Text.translatable("e33chat.server.console_only")); return 0; }
+        if (p == null) { src.sendFailure(Component.translatable("e33chat.server.console_only")); return 0; }
         com.niuqu.chatbubble.server.GroupManager.delete(p, name);
         return 1;
     }
 
-    private static int groupSay(ServerCommandSource src, String name, String text) {
+    private static int groupSay(CommandSourceStack src, String name, String text) {
         var p = playerOrNull(src);
-        if (p == null) { src.sendError(Text.translatable("e33chat.server.console_only")); return 0; }
+        if (p == null) { src.sendFailure(Component.translatable("e33chat.server.console_only")); return 0; }
         com.niuqu.chatbubble.server.GroupManager.say(p, name, text);
         return 1;
     }
 
     // Opens the server-config GUI on the executing player's client (S2C snapshot)
-    private static int openServerGui(ServerCommandSource src) {
+    private static int openServerGui(CommandSourceStack src) {
         var player = src.getPlayer();
         if (player == null) {
-            src.sendError(Text.translatable("e33chat.server.console_only"));
+            src.sendFailure(Component.translatable("e33chat.server.console_only"));
             return 0;
         }
         ServerPlayNetworking.send(player,
@@ -201,74 +198,74 @@ public class E33ChatCommands {
         return chat ? ChatBubbleMod.chatTemplates() : ChatBubbleMod.whisperTemplates();
     }
 
-    private static int list(ServerCommandSource src) {
-        src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_list_chat_header", templates(true).size()), false);
+    private static int list(CommandSourceStack src) {
+        src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_list_chat_header", templates(true).size()), false);
         printTemplates(src, templates(true));
-        src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_list_whisper_header", templates(false).size()), false);
+        src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_list_whisper_header", templates(false).size()), false);
         printTemplates(src, templates(false));
         return 1;
     }
 
-    private static void printTemplates(ServerCommandSource src, List<String> templates) {
+    private static void printTemplates(CommandSourceStack src, List<String> templates) {
         if (templates.isEmpty()) {
-            src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_list_empty"), false);
+            src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_list_empty"), false);
             return;
         }
         int i = 1;
         for (String t : templates) {
             int idx = i++;
-            src.sendFeedback(() -> Text.literal("  " + idx + ". " + t), false);
+            src.sendSuccess(() -> Component.literal("  " + idx + ". " + t), false);
         }
     }
 
-    private static int set(ServerCommandSource src, boolean chat, String raw) {
+    private static int set(CommandSourceStack src, boolean chat, String raw) {
         TemplateMatcher.CompileResult result = TemplateMatcher.compile(raw);
         if (result.template() == null) {
-            src.sendError(Text.translatable("e33chat.server.tpl_set_invalid", result.error()));
+            src.sendFailure(Component.translatable("e33chat.server.tpl_set_invalid", result.error()));
             return 0;
         }
         if (!result.template().unknownFields().isEmpty()) {
-            src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_set_unknown_fields", result.template().unknownFields()), false);
+            src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_set_unknown_fields", result.template().unknownFields()), false);
         }
         List<String> next = new ArrayList<>(templates(chat));
         if (next.contains(raw)) {
-            src.sendError(Text.translatable("e33chat.server.tpl_set_duplicate"));
+            src.sendFailure(Component.translatable("e33chat.server.tpl_set_duplicate"));
             return 0;
         }
         next.add(raw);
         updateTemplates(src, chat, next);
-        src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_set_added", next.size(), raw), false);
+        src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_set_added", next.size(), raw), false);
         return 1;
     }
 
-    private static int remove(ServerCommandSource src, boolean chat, int index) {
+    private static int remove(CommandSourceStack src, boolean chat, int index) {
         List<String> next = new ArrayList<>(templates(chat));
         if (index < 1 || index > next.size()) {
-            src.sendError(Text.translatable("e33chat.server.tpl_remove_bad_index", next.size()));
+            src.sendFailure(Component.translatable("e33chat.server.tpl_remove_bad_index", next.size()));
             return 0;
         }
         String removed = next.remove(index - 1);
         updateTemplates(src, chat, next);
-        src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_remove_done", removed), false);
+        src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_remove_done", removed), false);
         return 1;
     }
 
-    private static int clear(ServerCommandSource src, boolean chat) {
+    private static int clear(CommandSourceStack src, boolean chat) {
         updateTemplates(src, chat, List.of());
-        src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_clear_done",
-            Text.translatable(chat ? "e33chat.server.kind_chat" : "e33chat.server.kind_whisper")), false);
+        src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_clear_done",
+            Component.translatable(chat ? "e33chat.server.kind_chat" : "e33chat.server.kind_whisper")), false);
         return 1;
     }
 
-    private static int test(ServerCommandSource src, boolean chat, int index, String text) {
+    private static int test(CommandSourceStack src, boolean chat, int index, String text) {
         List<String> raws = templates(chat);
         if (index < 1 || index > raws.size()) {
-            src.sendError(Text.translatable("e33chat.server.tpl_test_bad_index", raws.size()));
+            src.sendFailure(Component.translatable("e33chat.server.tpl_test_bad_index", raws.size()));
             return 0;
         }
         TemplateMatcher.CompileResult result = TemplateMatcher.compile(raws.get(index - 1));
         if (result.template() == null) {
-            src.sendError(Text.translatable("e33chat.server.tpl_test_unparseable", result.error()));
+            src.sendFailure(Component.translatable("e33chat.server.tpl_test_unparseable", result.error()));
             return 0;
         }
         boolean whisper = result.template().whisper();
@@ -277,33 +274,33 @@ public class E33ChatCommands {
             whisper ? List.of(result.template()) : List.of(),
             name -> isKnownOnServer(src, name));
         if (match.isEmpty()) {
-            src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_test_no_match"), false);
+            src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_test_no_match"), false);
             return 1;
         }
         var r = match.orElseThrow();
-        src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_test_matched",
-                Text.translatable(whisper ? "e33chat.server.kind_whisper" : "e33chat.server.kind_chat")), false);
-        if (r.prefix() != null) src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_test_field_prefix", r.prefix()), false);
+        src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_test_matched",
+                Component.translatable(whisper ? "e33chat.server.kind_whisper" : "e33chat.server.kind_chat")), false);
+        if (r.prefix() != null) src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_test_field_prefix", r.prefix()), false);
         if (r.displayName() != null) {
-            src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_test_field_name",
+            src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_test_field_name",
                     whisper ? "sender/target" : "display_name", r.displayName())
-                .copy().append(Text.translatable("e33chat.server.tpl_test_verified")), false);
+                .copy().append(Component.translatable("e33chat.server.tpl_test_verified")), false);
         }
         if (r.sender() != null && r.target() != null) {
-            src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_test_field_sender", r.sender(), r.target()), false);
+            src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_test_field_sender", r.sender(), r.target()), false);
         }
-        src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_test_field_content", r.content()), false);
-        src.sendFeedback(() -> Text.translatable("e33chat.server.tpl_test_field_offset",
+        src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_test_field_content", r.content()), false);
+        src.sendSuccess(() -> Component.translatable("e33chat.server.tpl_test_field_offset",
                 r.nameStart(), r.nameEnd(), r.contentStart(), r.contentEnd()), false);
         return 1;
     }
 
-    private static void updateTemplates(ServerCommandSource src, boolean chat, List<String> next) {
+    private static void updateTemplates(CommandSourceStack src, boolean chat, List<String> next) {
         if (chat) ChatBubbleMod.setTemplates(new ArrayList<>(next), ChatBubbleMod.whisperTemplates(), ChatBubbleMod.templateDebug());
         else ChatBubbleMod.setTemplates(ChatBubbleMod.chatTemplates(), new ArrayList<>(next), ChatBubbleMod.templateDebug());
         // Persist to the per-world JSON and rebroadcast
         var server = src.getServer();
-        var path = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT)
+        var path = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
             .resolve("serverconfig").resolve("e33chat-server.json");
         ServerConfig cfg = new ServerConfig();
         // Every field must come from the live values: a partial snapshot gets
@@ -328,7 +325,7 @@ public class E33ChatCommands {
 
     // Server-side stand-in for the client's name-resolution gate: the executing
     // player is the client's self, and all online players are candidate names
-    private static boolean isKnownOnServer(ServerCommandSource src, String name) {
+    private static boolean isKnownOnServer(CommandSourceStack src, String name) {
         if (name == null || name.isEmpty()) return false;
         var server = src.getServer();
         var self = src.getPlayer();
@@ -336,7 +333,7 @@ public class E33ChatCommands {
             String selfName = self.getName().getString();
             if (!selfName.isEmpty() && (name.equals(selfName) || name.contains(selfName))) return true;
         }
-        for (var p : server.getPlayerManager().getPlayerList()) {
+        for (var p : server.getPlayerList().getPlayers()) {
             String n = p.getName().getString();
             if (!n.isEmpty() && (name.equals(n) || name.contains(n))) return true;
         }

@@ -1,28 +1,28 @@
 package com.niuqu.chatbubble.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * C2S handshake: the client announces it runs E33Chat right after logging in.
  * The server uses this to route group chat (packet for mod clients, plain
  * formatted line for vanilla ones) and to push the group list immediately.
  */
-public record ClientHelloPayload() implements CustomPayload {
+public record ClientHelloPayload() implements CustomPacketPayload {
 
-    public static final CustomPayload.Id<ClientHelloPayload> ID =
-        new CustomPayload.Id<>(Identifier.of("e33chat", "client_hello"));
+    public static final CustomPacketPayload.Type<ClientHelloPayload> ID =
+        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "client_hello"));
 
-    public static final PacketCodec<PacketByteBuf, ClientHelloPayload> CODEC = PacketCodec.of(
+    public static final StreamCodec<FriendlyByteBuf, ClientHelloPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {},
         buf -> new ClientHelloPayload()
     );
 
     @Override
-    public CustomPayload.Id<? extends CustomPayload> getId() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 
@@ -32,7 +32,7 @@ public record ClientHelloPayload() implements CustomPayload {
     }
 
     /** Server-side hook, invoked from ChatBubbleMod's receiver. */
-    public static void handleServer(ClientHelloPayload payload, ServerPlayerEntity player) {
+    public static void handleServer(ClientHelloPayload payload, ServerPlayer player) {
         com.niuqu.chatbubble.server.GroupManager.onClientHello(player);
     }
 }

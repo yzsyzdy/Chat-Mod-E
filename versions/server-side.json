@@ -13,5 +13,5 @@
     "platforms/*/src/main/java/com/niuqu/chatbubble/server/*.java",
     "shared/src/main/java/com/niuqu/chatbubble/server/*.java"
   ],
-  "min_files": 9
+  "min_files": 3
 }

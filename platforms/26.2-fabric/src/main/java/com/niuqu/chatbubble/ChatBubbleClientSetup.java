@@ -23,11 +23,10 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.ResourceManager;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -46,15 +45,15 @@ public class ChatBubbleClientSetup implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        Path configDir = MinecraftClient.getInstance().runDirectory.toPath().resolve("config/e33chat");
+        Path configDir = Minecraft.getInstance().gameDirectory.toPath().resolve("config/e33chat");
         configPath = configDir.resolve("e33chat-client.json");
         // Migration chain for the client config path (most recent first):
         // config/e33chat/client.json -> config/e33chat/e33chat-client.json
         // config/e33chat-client.json (2.3.1+) and config/e33chat.json (legacy) also move here.
         var logger = com.mojang.logging.LogUtils.getLogger();
         Path recentDirPath = configDir.resolve("client.json");
-        Path legacyPath = MinecraftClient.getInstance().runDirectory.toPath().resolve("config/e33chat-client.json");
-        Path oldFlatPath = MinecraftClient.getInstance().runDirectory.toPath().resolve("config/e33chat.json");
+        Path legacyPath = Minecraft.getInstance().gameDirectory.toPath().resolve("config/e33chat-client.json");
+        Path oldFlatPath = Minecraft.getInstance().gameDirectory.toPath().resolve("config/e33chat.json");
         if (!Files.exists(configPath)) {
             if (Files.exists(recentDirPath)) {
                 try {
@@ -199,11 +198,11 @@ public class ChatBubbleClientSetup implements ClientModInitializer {
             })
         );
 
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
             new SimpleSynchronousResourceReloadListener() {
                 @Override
-                public Identifier getFabricId() {
-                    return Identifier.of(ChatBubbleMod.MOD_ID, "shader_reload");
+                public ResourceLocation getFabricId() {
+                    return ResourceLocation.fromNamespaceAndPath(ChatBubbleMod.MOD_ID, "shader_reload");
                 }
                 @Override
                 public void reload(ResourceManager manager) {

@@ -1,8 +1,7 @@
 package com.niuqu.chatbubble.network;
 
-import net.minecraft.network.PacketByteBuf;
-
 import java.util.List;
+import net.minecraft.network.FriendlyByteBuf;
 
 /**
  * 共享 DTO：ServerConfigScreenPayload 与 ServerConfigSavePayload 的
@@ -15,7 +14,7 @@ public record ServerConfigDto(boolean useTpa, boolean historyEnabled, boolean te
                               boolean mediaEnabled, boolean mediaAutoClean, boolean easyBotCompat,
                               boolean groupsEnabled,
                               List<String> chatTemplates, List<String> whisperTemplates) {
-    public static void encode(ServerConfigDto dto, PacketByteBuf buf) {
+    public static void encode(ServerConfigDto dto, FriendlyByteBuf buf) {
         buf.writeBoolean(dto.useTpa);
         buf.writeBoolean(dto.historyEnabled);
         buf.writeBoolean(dto.templateDebug);
@@ -27,7 +26,7 @@ public record ServerConfigDto(boolean useTpa, boolean historyEnabled, boolean te
         ConfigSyncV2Payload.writeList(buf, dto.whisperTemplates);
     }
 
-    public static ServerConfigDto decode(PacketByteBuf buf) {
+    public static ServerConfigDto decode(FriendlyByteBuf buf) {
         boolean useTpa = buf.readBoolean();
         boolean history = buf.readBoolean();
         boolean debug = buf.readBoolean();

@@ -2,7 +2,7 @@ package com.niuqu.chatbubble.chat;
 
 import com.niuqu.chatbubble.chat.capture.EasyBotParser;
 import com.niuqu.chatbubble.store.ChatMessageStore;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class EasyBotParserTest {
 
     @Test void parsesDefaultEasyBotFormat() {
-        Text line = Text.literal("[闲聊群] <小明(123456789)> 你好");
+        Component line = Component.literal("[闲聊群] <小明(123456789)> 你好");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("小明", meta.senderName().getString());
@@ -21,7 +21,7 @@ class EasyBotParserTest {
     }
 
     @Test void parsesQqOnly() {
-        Text line = Text.literal("[闲聊群] <123456789> 在吗");
+        Component line = Component.literal("[闲聊群] <123456789> 在吗");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("123456789", meta.senderName().getString());
@@ -30,7 +30,7 @@ class EasyBotParserTest {
     }
 
     @Test void parsesNickWithoutQqIdForNonBroadcastGroup() {
-        Text line = Text.literal("[闲聊群] <小明> 你好");
+        Component line = Component.literal("[闲聊群] <小明> 你好");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("小明", meta.senderName().getString());
@@ -39,7 +39,7 @@ class EasyBotParserTest {
     }
 
     @Test void rejectsBroadcastLabelWithoutQqId() {
-        Text line = Text.literal("[系统] <Server> 重启完成");
+        Component line = Component.literal("[系统] <Server> 重启完成");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
@@ -48,7 +48,7 @@ class EasyBotParserTest {
     // used to be rejected, which pushed the whole relay through the player-path
     // parser and greyed it out (or glued the label onto the sender name).
     @Test void parsesLabeledColonFormat() {
-        Text line = Text.literal("[闲聊群] 小明：你好");
+        Component line = Component.literal("[闲聊群] 小明：你好");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("小明", meta.senderName().getString());
@@ -59,7 +59,7 @@ class EasyBotParserTest {
     }
 
     @Test void parsesLabeledColonFormatWithHalfWidthColon() {
-        Text line = Text.literal("[QQ群消息] dangdang0721: 凑木空");
+        Component line = Component.literal("[QQ群消息] dangdang0721: 凑木空");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("dangdang0721", meta.senderName().getString());
@@ -67,7 +67,7 @@ class EasyBotParserTest {
     }
 
     @Test void parsesLabeledColonFormatWithQqId() {
-        Text line = Text.literal("[闲聊群] 小明(123456789)：你好");
+        Component line = Component.literal("[闲聊群] 小明(123456789)：你好");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("小明", meta.senderName().getString());
@@ -76,7 +76,7 @@ class EasyBotParserTest {
     }
 
     @Test void colonFormatKeepsColonsInsideContent() {
-        Text line = Text.literal("[闲聊群] 小明：看这个 http://a.com/x 还有 9:30");
+        Component line = Component.literal("[闲聊群] 小明：看这个 http://a.com/x 还有 9:30");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("小明", meta.senderName().getString());
@@ -85,17 +85,17 @@ class EasyBotParserTest {
 
     @Test void rejectsColonFormatWithoutLabel() {
         // No label = ordinary chat; the player-path parser owns these lines.
-        Text line = Text.literal("小明：你好");
+        Component line = Component.literal("小明：你好");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
     @Test void rejectsColonFormatWithBroadcastLabel() {
-        Text line = Text.literal("[系统] Server：重启完成");
+        Component line = Component.literal("[系统] Server：重启完成");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
     @Test void rejectsColonFormatWithBlankContent() {
-        Text line = Text.literal("[闲聊群] 小明：   ");
+        Component line = Component.literal("[闲聊群] 小明：   ");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
@@ -103,23 +103,23 @@ class EasyBotParserTest {
 
     @Test void rejectsSystemDomainLabelWithCommandContent() {
         // AuthMe prompt: the label is "[玩家系统]", not the exact word "系统".
-        Text line = Text.literal("[玩家系统] 请使用以下命令登录: /log <密码>");
+        Component line = Component.literal("[玩家系统] 请使用以下命令登录: /log <密码>");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
     @Test void rejectsOtherSystemDomainLabels() {
-        Text line = Text.literal("[任务系统] 每日任务：去挖矿");
+        Component line = Component.literal("[任务系统] 每日任务：去挖矿");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
     @Test void rejectsColonRelayWithCommandContent() {
         // A relay shape whose content is a command is command output, not chat.
-        Text line = Text.literal("[QQ群消息] 夏九：/help");
+        Component line = Component.literal("[QQ群消息] 夏九：/help");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
     @Test void parsesChineseNickColonRelay() {
-        Text line = Text.literal("[QQ群消息] 夏九：在下载缺失mod");
+        Component line = Component.literal("[QQ群消息] 夏九：在下载缺失mod");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("夏九", meta.senderName().getString());
@@ -128,22 +128,22 @@ class EasyBotParserTest {
 
     @Test void angleShapeStaysClaimableUnderSystemLabelWithQqId() {
         // The colon gate must not leak into the angle shape's existing rules.
-        Text line = Text.literal("[系统] <小明(123456789)> 你好");
+        Component line = Component.literal("[系统] <小明(123456789)> 你好");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("小明", meta.senderName().getString());
     }
 
     @Test void rejectsPlainSystemText() {
-        Text line = Text.literal("服务器重启完成");
+        Component line = Component.literal("服务器重启完成");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
     @Test void contentSlicesStyledRuns() {
         // No HoverEvent here: Yarn's HoverEvent static init pulls ItemStack,
         // which cannot initialize in the headless Fabric unit-test environment.
-        Text image = Text.literal("[图片]").formatted(net.minecraft.util.Formatting.GREEN);
-        Text line = Text.literal("[闲聊群] <小明(123456789)> ").append(image);
+        Component image = Component.literal("[图片]").withStyle(net.minecraft.ChatFormatting.GREEN);
+        Component line = Component.literal("[闲聊群] <小明(123456789)> ").append(image);
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("[图片]", meta.rawContent().getString());
@@ -156,7 +156,7 @@ class EasyBotParserTest {
     // ---- [群名] label nor a QQ number is guaranteed.
 
     @Test void parsesRelayWithoutGroupLabel() {
-        Text line = Text.literal("<QW_SunnyDaze> [图片]");
+        Component line = Component.literal("<QW_SunnyDaze> [图片]");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("QW_SunnyDaze", meta.senderName().getString());
@@ -165,7 +165,7 @@ class EasyBotParserTest {
     }
 
     @Test void parsesGroupCardSuffix() {
-        Text line = Text.literal("<黑（群妈妈）> [动画表情]");
+        Component line = Component.literal("<黑（群妈妈）> [动画表情]");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("黑（群妈妈）", meta.senderName().getString());
@@ -173,7 +173,7 @@ class EasyBotParserTest {
     }
 
     @Test void parsesFullWidthQqParens() {
-        Text line = Text.literal("[闲聊群] <小明（123456789）> 你好");
+        Component line = Component.literal("[闲聊群] <小明（123456789）> 你好");
         ChatMessageStore.SenderMeta meta = EasyBotParser.tryParse(line, line.getString());
         assertNotNull(meta);
         assertEquals("小明", meta.senderName().getString());
@@ -182,22 +182,22 @@ class EasyBotParserTest {
     }
 
     @Test void rejectsBlankContent() {
-        Text line = Text.literal("<QW_SunnyDaze>    ");
+        Component line = Component.literal("<QW_SunnyDaze>    ");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
     @Test void rejectsBroadcastNameWithoutQqId() {
-        Text line = Text.literal("<系统> 服务器五分钟后重启");
+        Component line = Component.literal("<系统> 服务器五分钟后重启");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
     @Test void rejectsAngleBracketsBehindAPrefix() {
-        Text line = Text.literal("前缀 <小明> 你好");
+        Component line = Component.literal("前缀 <小明> 你好");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 
     @Test void rejectsOverlongName() {
-        Text line = Text.literal("<" + "x".repeat(33) + "> 你好");
+        Component line = Component.literal("<" + "x".repeat(33) + "> 你好");
         assertNull(EasyBotParser.tryParse(line, line.getString()));
     }
 }

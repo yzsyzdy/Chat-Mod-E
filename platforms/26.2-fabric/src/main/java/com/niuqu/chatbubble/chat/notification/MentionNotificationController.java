@@ -5,12 +5,9 @@ import com.niuqu.chatbubble.ChatBubbleScreen;
 import com.niuqu.chatbubble.store.ChatMessageStore;
 import com.niuqu.chatbubble.chat.MentionDetector;
 import com.niuqu.chatbubble.chat.notification.MentionNotificationBanner.NotificationType;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-
 import java.util.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 public class MentionNotificationController {
     public static final MentionNotificationController INSTANCE = new MentionNotificationController();
@@ -23,9 +20,9 @@ public class MentionNotificationController {
 
     private MentionNotificationController() {}
 
-    public void onMessageCaptured(Text content, ChatMessageStore.SenderMeta meta,
+    public void onMessageCaptured(Component content, ChatMessageStore.SenderMeta meta,
                                    int messageIndex, String replySender) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         String localName = mc.player.getName().getString();
@@ -34,9 +31,9 @@ public class MentionNotificationController {
 
         if (!MentionDetector.isMentioned(text, localName, requireAt, replySender)) return;
 
-        boolean isOwn = (meta.senderUUID() != null && meta.senderUUID().equals(mc.player.getUuid()))
+        boolean isOwn = (meta.senderUUID() != null && meta.senderUUID().equals(mc.player.getUUID()))
             || (meta.rawPlayerName() != null && meta.rawPlayerName().equals(localName));
-        boolean chatOpen = mc.currentScreen instanceof ChatBubbleScreen;
+        boolean chatOpen = mc.screen instanceof ChatBubbleScreen;
         NotificationType type = (replySender != null && replySender.equals(localName))
             ? NotificationType.QUOTE : NotificationType.MENTION;
         boolean selfNotify = isOwn && (type == NotificationType.QUOTE
@@ -64,14 +61,14 @@ public class MentionNotificationController {
         }
     }
 
-    public void onWhisperReceived(UUID senderUUID, Text senderName, Text content,
+    public void onWhisperReceived(UUID senderUUID, Component senderName, Component content,
                                    int messageIndex) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        boolean chatOpen = mc.currentScreen instanceof ChatBubbleScreen;
+        boolean chatOpen = mc.screen instanceof ChatBubbleScreen;
         String senderStr = senderName.getString().replaceAll("§.", "");
-        boolean isOwn = (senderUUID != null && senderUUID.equals(mc.player.getUuid()))
+        boolean isOwn = (senderUUID != null && senderUUID.equals(mc.player.getUUID()))
             || mc.player.getName().getString().equals(senderStr);
 
         ChatMessageStore.debugLog(() -> "[e33chat] Whisper banner | sender=" + senderStr
@@ -94,14 +91,14 @@ public class MentionNotificationController {
 
     // System messages (server broadcasts/deaths/joins) pop the same banner as
     // @/whisper/quote; no sender name — the [系统] label is the name row.
-    public void onSystemMessage(Text content, int messageIndex) {
-        if (MinecraftClient.getInstance().player == null) return;
+    public void onSystemMessage(Component content, int messageIndex) {
+        if (Minecraft.getInstance().player == null) return;
         if (!ChatBubbleClientSetup.config().systemBannerEnabled()) return;
-        enqueueDeduped(new UUID(0, 0), Text.empty(), content, messageIndex,
+        enqueueDeduped(new UUID(0, 0), Component.empty(), content, messageIndex,
             NotificationType.SYSTEM);
     }
 
-    private void enqueueDeduped(UUID uuid, Text name, Text content, int index,
+    private void enqueueDeduped(UUID uuid, Component name, Component content, int index,
                                  NotificationType type) {
         String fp = uuid + "\0" + content.getString();
         long now = System.currentTimeMillis();

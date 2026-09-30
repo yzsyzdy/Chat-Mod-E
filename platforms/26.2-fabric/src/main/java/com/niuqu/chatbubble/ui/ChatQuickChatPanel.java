@@ -1,19 +1,15 @@
 package com.niuqu.chatbubble.ui;
-import com.niuqu.chatbubble.ChatBubbleClientSetup;
 import com.niuqu.chatbubble.texture.UiTextureManager;
 import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
 import com.niuqu.chatbubble.render.ChatBubbleTheme;
 import com.niuqu.chatbubble.config.ChatBubbleConfig;
-
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.MathHelper;
-
-import java.util.ArrayList;
-import java.util.List;
 import com.niuqu.chatbubble.texture.UiElement;
+
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+
+import java.util.List;
 
 public class ChatQuickChatPanel {
     private static final int W = 140;
@@ -31,13 +27,13 @@ public class ChatQuickChatPanel {
         else visible = false;
     }
 
-    public void render(DrawContext g, int mouseX, int mouseY,
-            TextRenderer font, ChatBubbleTheme.Colors c,
+    public void render(GuiGraphics g, int mouseX, int mouseY,
+            net.minecraft.client.gui.Font font, ChatBubbleTheme.Colors c,
             int panelX, int panelW, int barTop,
-            TextFieldWidget input, float alpha) {
+            net.minecraft.client.gui.components.EditBox input, float alpha) {
         if (!visible) return;
         int a255 = (int) (255 * alpha);
-        var phrases = ChatBubbleClientSetup.config().quickChatPhrases();
+        var phrases = ChatBubbleConfig.QUICK_CHAT_PHRASES.get();
         int visiblePhrases = Math.min(phrases.size(), MAX_VISIBLE);
         int listH = visiblePhrases * ROW_H;
         int separatorH = visiblePhrases > 0 ? 4 : 0;
@@ -45,13 +41,14 @@ public class ChatQuickChatPanel {
 
         // 高 GUI 缩放（6x）时 panelW 收缩到 ~100 < 固定宽 140 → 居中会左溢出屏幕。
         // clamp 到面板内：min>max 时 Mth.clamp 返回下限（panelX+2），不会反转溢出
-        int px = MathHelper.clamp(panelX + panelW / 2 - W / 2, panelX + 2, panelX + panelW - W - 2);
+        int px = Mth.clamp(panelX + panelW / 2 - W / 2, panelX + 2, panelX + panelW - W - 2);
         int py = barTop - panelH - 4;
 
         ColoredTextureRenderer.drawWithAlpha(g, UiTextureManager.rl(UiElement.CONTENT_BG),
             px, py, W, panelH, alpha);
-        g.drawBorder(px, py, W, panelH, ChatBubbleTheme.alphaBlend(c.divider(), a255));
+        g.renderOutline(px, py, W, panelH, ChatBubbleTheme.alphaBlend(c.divider(), a255));
 
+        // Scrollbar
         int totalPhrases = phrases.size();
         int phraseAreaRight = px + W - 4;
         boolean hasScrollbar = totalPhrases > MAX_VISIBLE;
@@ -82,13 +79,13 @@ public class ChatQuickChatPanel {
         for (int i = startIdx; i < endIdx; i++) {
             String phrase = phrases.get(i);
             int rowY = listY + (i - startIdx) * ROW_H;
-            String display = font.trimToWidth(phrase, textMaxW);
+            String display = font.plainSubstrByWidth(phrase, textMaxW);
             boolean hover = mouseX >= px + 4 && mouseX <= hoverRight
                 && mouseY >= rowY && mouseY <= rowY + ROW_H;
             if (hover) com.niuqu.chatbubble.texture.ColoredTextureRenderer.drawWithAlpha(g,
                 com.niuqu.chatbubble.texture.UiTextureManager.rl(com.niuqu.chatbubble.texture.UiElement.HOVER_BG),
                 px + 4, rowY, hoverRight - (px + 4), ROW_H, alpha);
-            g.drawText(font, display, px + 6, rowY + 2, com.niuqu.chatbubble.render.ChatBubbleTheme.alphaBlend(c.textPrimary(), a255), false);
+            g.drawString(font, Component.literal(display), px + 6, rowY + 2, ChatBubbleTheme.alphaBlend(c.textPrimary(), a255), false);
             int delX = hoverRight - 13;
             int delY = rowY + 1;
             boolean hoverDel = mouseX >= delX && mouseX <= delX + 12 && mouseY >= delY && mouseY <= delY + 12;
@@ -97,9 +94,10 @@ public class ChatQuickChatPanel {
                     ? com.niuqu.chatbubble.texture.UiElement.CLOSE_HOVER
                     : com.niuqu.chatbubble.texture.UiElement.CLOSE_BG),
                 delX, delY, 12, 12, alpha);
-            g.drawText(font, "✕", delX + 6 - font.getWidth("✕") / 2, delY + 2, com.niuqu.chatbubble.render.ChatBubbleTheme.alphaBlend(c.closeText(), a255), false);
+            g.drawString(font, Component.literal("✕"), delX + 6 - font.width("✕") / 2, delY + 2, ChatBubbleTheme.alphaBlend(c.closeText(), a255), false);
         }
 
+        // Input box
         int inputY = py + 4 + listH + separatorH + 4;
         int inputX = px + 4;
         int inputW = W - 10;
@@ -110,10 +108,10 @@ public class ChatQuickChatPanel {
         boolean hoverInput = mouseX >= inputX && mouseX <= inputX + inputW
             && mouseY >= inputY && mouseY <= inputY + inputH;
         if (hoverInput || input.isFocused())
-            g.drawBorder(inputX, inputY, inputW, inputH, com.niuqu.chatbubble.render.ChatBubbleTheme.alphaBlend(c.textMuted(), a255));
-        if (input.getText().isEmpty() && !input.isFocused())
-            g.drawText(font, Text.translatable("e33chat.quick_chat.placeholder").getString(),
-                inputX + 2, inputY + 3, com.niuqu.chatbubble.render.ChatBubbleTheme.alphaBlend(c.textMuted(), a255), false);
+            g.renderOutline(inputX, inputY, inputW, inputH, ChatBubbleTheme.alphaBlend(c.textMuted(), a255));
+        if (input.getValue().isEmpty() && !input.isFocused())
+            g.drawString(font, Component.translatable("e33chat.quick_chat.placeholder"),
+                inputX + 2, inputY + 3, ChatBubbleTheme.alphaBlend(c.textMuted(), a255), false);
 
         input.setX(inputX + 2);
         input.setWidth(inputW - 4);
@@ -129,7 +127,7 @@ public class ChatQuickChatPanel {
         int listH = visiblePhrases * ROW_H;
         int separatorH = visiblePhrases > 0 ? 4 : 0;
         int panelH = 8 + listH + separatorH + 20;
-        int px = MathHelper.clamp(panelX + panelW / 2 - W / 2, panelX + 2, panelX + panelW - W - 2);
+        int px = Mth.clamp(panelX + panelW / 2 - W / 2, panelX + 2, panelX + panelW - W - 2);
         int py = barTop - panelH - 4;
         int inputX = px + 4;
         int inputY = py + 4 + listH + separatorH + 4;
@@ -137,11 +135,11 @@ public class ChatQuickChatPanel {
     }
 
     public int handleClick(int mx, int my,
-            TextRenderer font, ChatBubbleTheme.Colors c,
+            net.minecraft.client.gui.Font font, ChatBubbleTheme.Colors c,
             int panelX, int panelW, int barTop,
-            TextFieldWidget input) {
+            net.minecraft.client.gui.components.EditBox input) {
         if (!visible) return -1;
-        var phrases = ChatBubbleClientSetup.config().quickChatPhrases();
+        var phrases = ChatBubbleConfig.QUICK_CHAT_PHRASES.get();
         int visiblePhrases = Math.min(phrases.size(), MAX_VISIBLE);
         int listH = visiblePhrases * ROW_H;
         int separatorH = visiblePhrases > 0 ? 4 : 0;
@@ -149,7 +147,7 @@ public class ChatQuickChatPanel {
 
         // 高 GUI 缩放（6x）时 panelW 收缩到 ~100 < 固定宽 140 → 居中会左溢出屏幕。
         // clamp 到面板内：min>max 时 Mth.clamp 返回下限（panelX+2），不会反转溢出
-        int px = MathHelper.clamp(panelX + panelW / 2 - W / 2, panelX + 2, panelX + panelW - W - 2);
+        int px = Mth.clamp(panelX + panelW / 2 - W / 2, panelX + 2, panelX + panelW - W - 2);
         int py = barTop - panelH - 4;
 
         if (mx < px || mx > px + W || my < py || my > py + panelH) {
@@ -166,14 +164,15 @@ public class ChatQuickChatPanel {
             int delX = hoverRight - 13;
             int delY = rowY + 1;
             if (mx >= delX && mx <= delX + 12 && my >= delY && my <= delY + 12) {
-                var list = new ArrayList<>(phrases);
+                var list = new java.util.ArrayList<>(phrases);
                 list.remove(i);
-                ChatBubbleClientSetup.saveConfig(ChatBubbleClientSetup.config().withQuickChatPhrases(list));
+                ChatBubbleConfig.QUICK_CHAT_PHRASES.set(list);
                 scrollOffset = Math.min(scrollOffset, Math.max(0, list.size() - MAX_VISIBLE));
                 return -1;
             }
             if (mx >= px + 4 && mx <= hoverRight
                 && my >= rowY && my <= rowY + ROW_H) {
+                String phrase = phrases.get(i);
                 requestClose();
                 return i;
             }
@@ -185,8 +184,8 @@ public class ChatQuickChatPanel {
     }
 
     public void handleScroll(double scrollY) {
-        var phrases = ChatBubbleClientSetup.config().quickChatPhrases();
+        var phrases = ChatBubbleConfig.QUICK_CHAT_PHRASES.get();
         int maxScroll = Math.max(0, phrases.size() - MAX_VISIBLE);
-        scrollOffset = MathHelper.clamp(scrollOffset - (int) scrollY, 0, maxScroll);
+        scrollOffset = Mth.clamp(scrollOffset - (int) scrollY, 0, maxScroll);
     }
 }

@@ -6,12 +6,12 @@ import com.niuqu.chatbubble.render.ChatBubbleTheme;
 import com.niuqu.chatbubble.render.PanelBackground;
 import com.niuqu.chatbubble.render.RoundRectRenderer;
 import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 
 /**
  * Framing editor for the custom chat-panel background (2.4.12, client-only).
@@ -41,7 +41,7 @@ public class PanelCropScreen extends Screen {
     private boolean dragging;
 
     public PanelCropScreen(Screen parent) {
-        super(Text.translatable("e33chat.crop.title"));
+        super(Component.translatable("e33chat.crop.title"));
         this.parent = parent;
         PanelBackground.Crop c = PanelBackground.parseCrop(ChatBubbleClientSetup.config().panelBgCrop());
         this.centerX = c.centerX();
@@ -72,7 +72,7 @@ public class PanelCropScreen extends Screen {
                 lastKnownSize = now;
                 // yarn Screen has no rebuildWidgets(); re-running init() is the
                 // equivalent, and this screen builds no widgets of its own.
-                clearChildren();
+                clearWidgets();
                 init();
             }
         }
@@ -124,11 +124,11 @@ public class PanelCropScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext g, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g, mouseX, mouseY, partialTick);
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
-        Identifier tex = PanelBackground.textureId();
+        ResourceLocation tex = PanelBackground.textureId();
         if (tex != null && dispW > 0) {
             // The whole picture, unscaled by any crop: the point of the editor is
             // to see what is being left out.
@@ -139,8 +139,8 @@ public class PanelCropScreen extends Screen {
             // Never leave the user staring at an empty screen: say why it is empty.
             String reason = PanelBackground.failed() ? "e33chat.crop.failed"
                 : PanelBackground.loading() ? "e33chat.crop.loading" : "e33chat.crop.no_image";
-            String msg = net.minecraft.text.Text.translatable(reason).getString();
-            g.drawText(textRenderer, msg, (width - textRenderer.getWidth(msg)) / 2, height / 2,
+            String msg = net.minecraft.network.chat.Component.translatable(reason).getString();
+            g.drawString(font, msg, (width - font.width(msg)) / 2, height / 2,
                 PanelBackground.failed() ? 0xFFFF6666 : c.textSecondary(), false);
         }
 
@@ -161,8 +161,8 @@ public class PanelCropScreen extends Screen {
         }
 
         // Hint + buttons
-        String hint = Text.translatable("e33chat.crop.hint").getString();
-        g.drawText(textRenderer, hint, PAD, btnY + 6, c.textSecondary(), false);
+        String hint = Component.translatable("e33chat.crop.hint").getString();
+        g.drawString(font, hint, PAD, btnY + 6, c.textSecondary(), false);
 
         boolean hoverCancel = over(mouseX, mouseY, btnCancelX, btnY, BTN_W, BTN_H);
         boolean hoverConfirm = over(mouseX, mouseY, btnConfirmX, btnY, BTN_W, BTN_H);
@@ -170,25 +170,25 @@ public class PanelCropScreen extends Screen {
             hoverCancel ? 0xFF4A4A52 : 0xFF36363E);
         RoundRectRenderer.fill(g, btnConfirmX, btnY, btnConfirmX + BTN_W, btnY + BTN_H, 4,
             hoverConfirm ? 0xFF3A5FCD : 0xFF2C4A9E);
-        String cancelLabel = Text.translatable("gui.cancel").getString();
-        String confirmLabel = Text.translatable("gui.done").getString();
-        g.drawText(textRenderer, cancelLabel,
-            btnCancelX + (BTN_W - textRenderer.getWidth(cancelLabel)) / 2, btnY + 6, 0xFFFFFFFF, false);
-        g.drawText(textRenderer, confirmLabel,
-            btnConfirmX + (BTN_W - textRenderer.getWidth(confirmLabel)) / 2, btnY + 6, 0xFFFFFFFF, false);
+        String cancelLabel = Component.translatable("gui.cancel").getString();
+        String confirmLabel = Component.translatable("gui.done").getString();
+        g.drawString(font, cancelLabel,
+            btnCancelX + (BTN_W - font.width(cancelLabel)) / 2, btnY + 6, 0xFFFFFFFF, false);
+        g.drawString(font, confirmLabel,
+            btnConfirmX + (BTN_W - font.width(confirmLabel)) / 2, btnY + 6, 0xFFFFFFFF, false);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
         if (over(mouseX, mouseY, btnCancelX, btnY, BTN_W, BTN_H)) {
-            close();
+            onClose();
             return true;
         }
         if (over(mouseX, mouseY, btnConfirmX, btnY, BTN_W, BTN_H)) {
             ChatBubbleClientSetup.saveConfig(ChatBubbleClientSetup.config().withPanelBgCrop(
                 PanelBackground.formatCrop(new PanelBackground.Crop(centerX, centerY, zoom))));
-            MinecraftClient.getInstance().setScreen(parent);
+            Minecraft.getInstance().setScreen(parent);
             return true;
         }
         int[] sel = selectionScreenRect();
@@ -204,8 +204,8 @@ public class PanelCropScreen extends Screen {
         if (dragging && dispW > 0 && dispH > 0) {
             // Screen delta -> normalized picture delta. Clamped so a stray drag can
             // never push the window off the picture (sourceRect clamps again too).
-            centerX = MathHelper.clamp(centerX + (float) dragX / dispW, 0f, 1f);
-            centerY = MathHelper.clamp(centerY + (float) dragY / dispH, 0f, 1f);
+            centerX = Mth.clamp(centerX + (float) dragX / dispW, 0f, 1f);
+            centerY = Mth.clamp(centerY + (float) dragY / dispH, 0f, 1f);
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
@@ -220,7 +220,7 @@ public class PanelCropScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (scrollY != 0) {
-            zoom = MathHelper.clamp(zoom * (1f + 0.12f * (float) scrollY), MIN_ZOOM, MAX_ZOOM);
+            zoom = Mth.clamp(zoom * (1f + 0.12f * (float) scrollY), MIN_ZOOM, MAX_ZOOM);
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
@@ -231,12 +231,12 @@ public class PanelCropScreen extends Screen {
     }
 
     @Override
-    public void close() {
-        MinecraftClient.getInstance().setScreen(parent);
+    public void onClose() {
+        Minecraft.getInstance().setScreen(parent);
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 }

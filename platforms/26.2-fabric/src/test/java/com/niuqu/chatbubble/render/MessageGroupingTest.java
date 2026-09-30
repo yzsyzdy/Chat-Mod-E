@@ -1,10 +1,10 @@
 package com.niuqu.chatbubble.render;
 
 import com.niuqu.chatbubble.store.ChatMessageStore;
-import net.minecraft.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import net.minecraft.network.chat.Component;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +17,7 @@ class MessageGroupingTest {
 
     private static ChatMessageStore.ChatMessage msg(String sender, String rawName, long time, boolean isSystem) {
         return new ChatMessageStore.ChatMessage(
-            UUID.randomUUID(), Text.literal(sender), Text.literal("hi"), time,
+            UUID.randomUUID(), Component.literal(sender), Component.literal("hi"), time,
             false, isSystem, null, null, null, 0, rawName, false, null, null);
     }
 

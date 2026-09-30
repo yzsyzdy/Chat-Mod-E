@@ -1,9 +1,10 @@
 package com.niuqu.chatbubble.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import Type;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server -> client: one chunk of a media download. The special form
@@ -11,20 +12,20 @@ import net.minecraft.util.Identifier;
  * fail the fetch instead of hanging.
  */
 public record MediaResponsePayload(String mediaId, int index, int totalChunks, byte[] chunk)
-        implements CustomPayload {
+        implements CustomPacketPayload {
 
-    public static final CustomPayload.Id<MediaResponsePayload> ID =
-        new CustomPayload.Id<>(Identifier.of("e33chat", "media_response"));
+    public static final CustomPacketPayload.Type<MediaResponsePayload> ID =
+        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "media_response"));
 
-    public static final PacketCodec<PacketByteBuf, MediaResponsePayload> CODEC = PacketCodec.of(
+    public static final StreamCodec<FriendlyByteBuf, MediaResponsePayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {
-            buf.writeString(value.mediaId);
+            buf.writeUtf(value.mediaId);
             buf.writeInt(value.index);
             buf.writeInt(value.totalChunks);
             buf.writeByteArray(value.chunk);
         },
         buf -> new MediaResponsePayload(
-            buf.readString(64),
+            buf.readUtf(64),
             buf.readInt(),
             buf.readInt(),
             buf.readByteArray(com.niuqu.chatbubble.server.DiskMediaStore.CHUNK_BYTES)
@@ -32,5 +33,5 @@ public record MediaResponsePayload(String mediaId, int index, int totalChunks, b
     );
 
     @Override
-    public Id<MediaResponsePayload> getId() { return ID; }
+    public Type<MediaResponsePayload> type() { return ID; }
 }

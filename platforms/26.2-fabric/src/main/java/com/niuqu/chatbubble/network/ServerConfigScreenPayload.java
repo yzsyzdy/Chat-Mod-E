@@ -1,12 +1,12 @@
 package com.niuqu.chatbubble.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
-
+import Type;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server -> client: open the server-config GUI with the current server settings
@@ -18,12 +18,12 @@ public record ServerConfigScreenPayload(boolean useTpa, boolean historyEnabled, 
                                         boolean mediaEnabled, boolean mediaAutoClean, boolean easyBotCompat,
                                         boolean groupsEnabled,
                                         List<String> chatTemplates, List<String> whisperTemplates)
-        implements CustomPayload {
+        implements CustomPacketPayload {
 
-    public static final CustomPayload.Id<ServerConfigScreenPayload> ID =
-        new CustomPayload.Id<>(Identifier.of("e33chat", "server_config_screen"));
+    public static final CustomPacketPayload.Type<ServerConfigScreenPayload> ID =
+        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "server_config_screen"));
 
-    public static final PacketCodec<PacketByteBuf, ServerConfigScreenPayload> CODEC = PacketCodec.of(
+    public static final StreamCodec<FriendlyByteBuf, ServerConfigScreenPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> ServerConfigDto.encode(new ServerConfigDto(
             value.useTpa, value.historyEnabled, value.templateDebug, value.mediaEnabled,
             value.mediaAutoClean, value.easyBotCompat, value.groupsEnabled, value.chatTemplates, value.whisperTemplates), buf),
@@ -36,5 +36,5 @@ public record ServerConfigScreenPayload(boolean useTpa, boolean historyEnabled, 
     );
 
     @Override
-    public Id<ServerConfigScreenPayload> getId() { return ID; }
+    public Type<ServerConfigScreenPayload> type() { return ID; }
 }

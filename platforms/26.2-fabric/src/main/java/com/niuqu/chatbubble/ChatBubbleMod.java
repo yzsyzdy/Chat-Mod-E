@@ -28,11 +28,8 @@ import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -80,7 +77,7 @@ public class ChatBubbleMod implements ModInitializer {
                 s = mediaStore;
                 if (s == null) {
                     s = new com.niuqu.chatbubble.server.DiskMediaStore(
-                        server.getSavePath(net.minecraft.util.WorldSavePath.ROOT)
+                        server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
                             .resolve("serverconfig").resolve("e33chat-media"));
                     mediaStore = s;
                 }
@@ -291,20 +288,20 @@ public class ChatBubbleMod implements ModInitializer {
     // /msg /tell /w /whisper carry a quote the client synced (QuoteSyncPayload); consume it
     // here and broadcast the quote meta, because vanilla private messages never hit
     // ServerMessageEvents.CHAT_MESSAGE
-    public static void consumePrivateMessageQuote(ParseResults<ServerCommandSource> parseResults, String command) {
+    public static void consumePrivateMessageQuote(ParseResults<CommandSourceStack> parseResults, String command) {
         String[] parts = command.split(" ");
         if (parts.length < 3) return;
         String label = parts[0];
         if (label.startsWith("/")) label = label.substring(1);
         if (!label.equals("msg") && !label.equals("tell") && !label.equals("w") && !label.equals("whisper")) return;
-        ServerCommandSource source = parseResults.getContext().getSource();
-        ServerPlayerEntity sender = source.getPlayer();
+        CommandSourceStack source = parseResults.getContext().getSource();
+        ServerPlayer sender = source.getPlayer();
         if (sender == null) return;
-        QuotePending quote = takeQuote(sender.getUuid());
+        QuotePending quote = takeQuote(sender.getUUID());
         if (quote == null) return;
-        ChatMetaPayload meta = new ChatMetaPayload(sender.getUuid(), sender.getName().getString(),
+        ChatMetaPayload meta = new ChatMetaPayload(sender.getUUID(), sender.getName().getString(),
             quote.messageHash(), quote.quotedSenderName(), quote.quotedContent(), Collections.emptyList());
-        for (ServerPlayerEntity p : source.getServer().getPlayerManager().getPlayerList()) {
+        for (ServerPlayer p : source.getServer().getPlayerList().getPlayers()) {
             ServerPlayNetworking.send(p, meta);
         }
     }
@@ -325,14 +322,14 @@ public class ChatBubbleMod implements ModInitializer {
     }
 
     public static void broadcastServerConfig(net.minecraft.server.MinecraftServer server) {
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
             sendServerConfigTripleTo(p);
         }
     }
 
     // 四 payload 组合（use_tpa + templates + media cap + easybot）：JOIN 与 broadcast 共用。
     // media/easybot 是独立能力 type——旧客户端安全丢未知 payload，混版本不会 desync。
-    private static void sendServerConfigTripleTo(ServerPlayerEntity player) {
+    private static void sendServerConfigTripleTo(ServerPlayer player) {
         ServerPlayNetworking.send(player,
             new ConfigSyncPayload(useTpa));
         ServerPlayNetworking.send(player, buildConfigV2());

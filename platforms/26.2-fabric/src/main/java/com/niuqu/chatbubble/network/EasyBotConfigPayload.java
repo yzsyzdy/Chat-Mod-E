@@ -1,10 +1,11 @@
 package com.niuqu.chatbubble.network;
 
+import Type;
 import com.niuqu.chatbubble.store.ChatMessageStore;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server -> client: EasyBot compatibility toggle (2.4.3-beta).
@@ -13,18 +14,18 @@ import net.minecraft.util.Identifier;
  * harmlessly, so a mixed-version client/server never desyncs. Absent payload =
  * disabled, matching the server config default.
  */
-public record EasyBotConfigPayload(boolean easyBotCompat) implements CustomPayload {
+public record EasyBotConfigPayload(boolean easyBotCompat) implements CustomPacketPayload {
 
-    public static final CustomPayload.Id<EasyBotConfigPayload> ID =
-        new CustomPayload.Id<>(Identifier.of("e33chat", "config_sync_easybot"));
+    public static final CustomPacketPayload.Type<EasyBotConfigPayload> ID =
+        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "config_sync_easybot"));
 
-    public static final PacketCodec<PacketByteBuf, EasyBotConfigPayload> CODEC = PacketCodec.of(
+    public static final StreamCodec<FriendlyByteBuf, EasyBotConfigPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> buf.writeBoolean(value.easyBotCompat),
         buf -> new EasyBotConfigPayload(buf.readBoolean())
     );
 
     @Override
-    public Id<EasyBotConfigPayload> getId() { return ID; }
+    public Type<EasyBotConfigPayload> type() { return ID; }
 
     public static void handle(EasyBotConfigPayload payload) {
         ChatMessageStore.setEasyBotCompat(payload.easyBotCompat());

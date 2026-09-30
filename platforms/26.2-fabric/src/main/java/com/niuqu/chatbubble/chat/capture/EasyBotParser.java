@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /**
  * Built-in parser for EasyBot QQ group messages relayed into the game as
@@ -70,7 +70,7 @@ public final class EasyBotParser {
         return s.endsWith("系统") || s.endsWith("插件") || s.endsWith("助手");
     }
 
-    public static ChatMessageStore.SenderMeta tryParse(Text message, String text) {
+    public static ChatMessageStore.SenderMeta tryParse(Component message, String text) {
         if (text == null || text.isEmpty()) return null;
         Matcher angle = RELAY_FORMAT.matcher(text);
         if (angle.matches()) return build(message, angle, true);
@@ -95,7 +95,7 @@ public final class EasyBotParser {
         return null;
     }
 
-    private static ChatMessageStore.SenderMeta build(Text message, Matcher m, boolean allowStepAside) {
+    private static ChatMessageStore.SenderMeta build(Component message, Matcher m, boolean allowStepAside) {
         String groupName = m.group(1) == null ? "" : m.group(1).trim();
         String nameArea = m.group(2) == null ? "" : m.group(2).trim();
         String content = m.group(3);
@@ -139,16 +139,16 @@ public final class EasyBotParser {
         UUID uuid = allowStepAside ? new UUID(0, 0) : resolveUuid(displayName);
         String rawPlayerName = qq != null ? qq : displayName;
 
-        Text contentComp = ChatMessageStore.sliceStyled(message, m.start(3), m.end(3));
+        Component contentComp = ChatMessageStore.sliceStyled(message, m.start(3), m.end(3));
         // Colon shape resolves a real online player: rebuild the styled
         // label (channel/title prefix included) from the original line, so
         // claiming the line no longer costs the sender's decoration. A
         // genuine relay nick that merely collides with an online name keeps
         // its skin via rawPlayerName below, and the name cache stays clean
         // either way (rawPlayerName is the bare name / QQ number).
-        Text nameComp = (uuid != null && !uuid.equals(new UUID(0, 0)))
-            ? ChatPipeline.extractDecoratedName(message, content, displayName, Text.literal(displayName))
-            : Text.literal(displayName);
+        Component nameComp = (uuid != null && !uuid.equals(new UUID(0, 0)))
+            ? ChatPipeline.extractDecoratedName(message, content, displayName, Component.literal(displayName))
+            : Component.literal(displayName);
         return new ChatMessageStore.SenderMeta(
             uuid, nameComp, contentComp, false,
             rawPlayerName, false, null);
@@ -157,9 +157,9 @@ public final class EasyBotParser {
     /** Online profile UUID for a name, else a previously seen one, else zero. */
     private static UUID resolveUuid(String name) {
         try {
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
-            if (mc != null && mc.player != null && mc.player.networkHandler != null) {
-                for (net.minecraft.client.network.PlayerListEntry info : mc.player.networkHandler.getPlayerList()) {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            if (mc != null && mc.player != null && mc.player.connection != null) {
+                for (net.minecraft.client.multiplayer.PlayerInfo info : mc.player.connection.getOnlinePlayers()) {
                     for (String cand : ChatClassifier.nameCandidates(info)) {
                         if (cand.equalsIgnoreCase(name)) return info.getProfile().getId();
                     }
@@ -180,9 +180,9 @@ public final class EasyBotParser {
     private static boolean isKnownPlayer(String displayName) {
         try {
             if (ChatMessageStore.knownNameVariants().contains(displayName)) return true;
-            net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
-            if (mc == null || mc.player == null || mc.player.networkHandler == null) return false;
-            for (net.minecraft.client.network.PlayerListEntry info : mc.player.networkHandler.getPlayerList()) {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            if (mc == null || mc.player == null || mc.player.connection == null) return false;
+            for (net.minecraft.client.multiplayer.PlayerInfo info : mc.player.connection.getOnlinePlayers()) {
                 for (String cand : ChatClassifier.nameCandidates(info)) {
                     if (cand.equalsIgnoreCase(displayName)) return true;
                 }

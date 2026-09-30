@@ -11,10 +11,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.niuqu.chatbubble.chat.notification.MentionNotificationBanner;
 import com.niuqu.chatbubble.config.ChatBubbleConfig;
 import java.util.List;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 
 public class ChatBubbleHudOverlay {
 
@@ -26,9 +25,9 @@ public class ChatBubbleHudOverlay {
 
     private static ChatBubbleConfig cfg() { return ChatBubbleClientSetup.config(); }
 
-    private static Identifier chatIconTex() {
+    private static ResourceLocation chatIconTex() {
         String theme = cfg().theme().toLowerCase();
-        return Identifier.of("e33chat", "textures/gui/" + theme + "/chat_icon.png");
+        return ResourceLocation.fromNamespaceAndPath("e33chat", "textures/gui/" + theme + "/chat_icon.png");
     }
 
     private static ChatBubbleTheme theme() {
@@ -37,28 +36,28 @@ public class ChatBubbleHudOverlay {
 
     private static ChatBubbleTheme.Colors c() { return Appearance.snapshot(); }
 
-    public static void render(DrawContext g) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+    public static void render(GuiGraphics g) {
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options == null) return;
         // F1 hides through vanilla hudHidden (InGameHud is skipped entirely).
         // F3 does not toggle hudHidden, so mirror the same "no E33Chat HUD while
         // the debug screen is open" behavior here.
-        if (mc.inGameHud.getDebugHud().shouldShowDebugHud()) return;
+        if (mc.gui.getDebugOverlay().showDebugScreen()) return;
 
-        g.getMatrices().push();
-        g.getMatrices().translate(0, 0, 300);
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 300);
 
         MentionNotificationBanner.INSTANCE.tick();
-        if (mc.currentScreen == null) {
+        if (mc.screen == null) {
             MentionNotificationBanner.INSTANCE.render(g,
-                mc.getWindow().getScaledWidth(),
-                mc.getWindow().getScaledHeight());
+                mc.getWindow().getGuiScaledWidth(),
+                mc.getWindow().getGuiScaledHeight());
         }
 
-        if (mc.currentScreen != null) { g.getMatrices().pop(); return; }
+        if (mc.screen != null) { g.pose().popPose(); return; }
 
-        String keyName = mc.options.chatKey.getBoundKeyLocalizedText().getString();
-        int screenH = mc.getWindow().getScaledHeight();
+        String keyName = mc.options.keyChat.getTranslatedKeyMessage().getString();
+        int screenH = mc.getWindow().getGuiScaledHeight();
         int x = cfg().hudIconX();
         int iconY = screenH - ICON_S - cfg().hudIconY();
         int textY = iconY + ICON_S + 1;
@@ -74,44 +73,44 @@ public class ChatBubbleHudOverlay {
             }
 
             String keyDisplay = "[" + keyName + "]";
-            int keyW = mc.textRenderer.getWidth(keyDisplay);
+            int keyW = mc.font.width(keyDisplay);
             int keyX = keyW > ICON_S ? x : x + (ICON_S - keyW) / 2;
-            g.drawText(mc.textRenderer, keyDisplay, keyX, textY, 0xFFFFFFFF, false);
+            g.drawString(mc.font, keyDisplay, keyX, textY, 0xFFFFFFFF, false);
         }
 
-        g.getMatrices().pop();
+        g.pose().popPose();
     }
 
     // Fabric's HUD layer draws behind the screen batch; screens that render over
     // it re-invoke this so the banner stays visible on top
-    public static void renderBannerForScreen(DrawContext g) {
-        MinecraftClient mc = MinecraftClient.getInstance();
+    public static void renderBannerForScreen(GuiGraphics g) {
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options == null) return;
-        if (mc.inGameHud.getDebugHud().shouldShowDebugHud()) return;
-        if (mc.currentScreen instanceof ChatBubbleScreen) {
+        if (mc.gui.getDebugOverlay().showDebugScreen()) return;
+        if (mc.screen instanceof ChatBubbleScreen) {
             MentionNotificationBanner.INSTANCE.render(g,
-                mc.getWindow().getScaledWidth(),
-                mc.getWindow().getScaledHeight());
+                mc.getWindow().getGuiScaledWidth(),
+                mc.getWindow().getGuiScaledHeight());
         }
     }
 
     public static boolean isMouseOverIcon(double mx, double my) {
         if (cfg().hideChatIcon()) return false;
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.currentScreen != null) return false;
-        int screenH = mc.getWindow().getScaledHeight();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen != null) return false;
+        int screenH = mc.getWindow().getGuiScaledHeight();
         int iconY = screenH - ICON_S - cfg().hudIconY();
-        return mx >= cfg().hudIconX() && mx <= cfg().hudIconX() + ICON_S && my >= iconY && my <= iconY + ICON_S + mc.textRenderer.fontHeight + 2;
+        return mx >= cfg().hudIconX() && mx <= cfg().hudIconX() + ICON_S && my >= iconY && my <= iconY + ICON_S + mc.font.lineHeight + 2;
     }
 
 
-    private static void drawIcon(DrawContext g, int x, int y) {
+    private static void drawIcon(GuiGraphics g, int x, int y) {
         // getTexture 无缓存时自动 new ResourceTexture 懒加载（资源包可覆盖，F3+T 即时生效）
-        g.drawTexture(chatIconTex(), x, y, 0.0F, 0.0F, ICON_S, ICON_S, ICON_S, ICON_S);
+        g.blit(chatIconTex(), x, y, 0.0F, 0.0F, ICON_S, ICON_S, ICON_S, ICON_S);
     }
 
-    private static void drawScaledTip(DrawContext g, int x, int y, int disp) {
-        Identifier tex = ChatBubbleScreen.iconTex("private_tip");
-        g.drawTexture(tex, x, y, disp, disp, (float) SRC_U, (float) SRC_V, SRC_S, SRC_S, 16, 16);
+    private static void drawScaledTip(GuiGraphics g, int x, int y, int disp) {
+        ResourceLocation tex = ChatBubbleScreen.iconTex("private_tip");
+        g.blit(tex, x, y, disp, disp, (float) SRC_U, (float) SRC_V, SRC_S, SRC_S, 16, 16);
     }
 }

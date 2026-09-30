@@ -1,34 +1,33 @@
 package com.niuqu.chatbubble.store;
 import com.niuqu.chatbubble.ChatBubbleClientSetup;
 import com.niuqu.chatbubble.config.ChatBubbleConfig;
-
-import net.minecraft.util.Formatting;import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 
 
 public class ChatMessageStore {
     // 通知/声音副作用观察者（B4 上移，2.3.15）：store 只做判断与数据，
     // 横幅/提示音由客户端注册的实现执行；测试环境默认 no-op，不依赖 Minecraft 单例。
     public interface MessageEffectObserver {
-        void onMentionOrQuote(Text content, SenderMeta meta, int index, String replySender);
-        void onWhisperReceived(UUID senderUUID, Text senderName, Text content, int index);
-        void onSystemMessage(Text content, int index);
+        void onMentionOrQuote(Component content, SenderMeta meta, int index, String replySender);
+        void onWhisperReceived(UUID senderUUID, Component senderName, Component content, int index);
+        void onSystemMessage(Component content, int index);
         void onPublicChatSound();
         void onQuoteSound();
     }
 
     private static final MessageEffectObserver NOOP_OBSERVER = new MessageEffectObserver() {
-        @Override public void onMentionOrQuote(Text content, SenderMeta meta, int index, String replySender) {}
-        @Override public void onWhisperReceived(UUID senderUUID, Text senderName, Text content, int index) {}
-        @Override public void onSystemMessage(Text content, int index) {}
+        @Override public void onMentionOrQuote(Component content, SenderMeta meta, int index, String replySender) {}
+        @Override public void onWhisperReceived(UUID senderUUID, Component senderName, Component content, int index) {}
+        @Override public void onSystemMessage(Component content, int index) {}
         @Override public void onPublicChatSound() {}
         @Override public void onQuoteSound() {}
     };
@@ -173,15 +172,15 @@ public class ChatMessageStore {
     // player? Online candidates + self + seen players. Mirrors the mixin's gate.
     public static boolean isKnownPlayerName(String name) {
         if (name == null || name.isEmpty()) return false;
-        var player = net.minecraft.client.MinecraftClient.getInstance().player;
+        var player = net.minecraft.client.Minecraft.getInstance().player;
         if (player == null) return false;
         String myName = player.getName().getString();
         if (!myName.isEmpty() && (name.equals(myName) || name.contains(myName))) return true;
-        if (player.networkHandler != null) {
-            for (var info : player.networkHandler.getPlayerList()) {
+        if (player.connection != null) {
+            for (var info : player.connection.getOnlinePlayers()) {
                 String profile = info.getProfile().getName();
                 if (!profile.isEmpty() && (name.equals(profile) || name.contains(profile))) return true;
-                var tab = info.getDisplayName();
+                var tab = info.getTabListDisplayName();
                 if (tab != null) {
                     String ts = tab.getString();
                     if (!ts.isEmpty() && (name.equals(ts) || name.contains(ts))) return true;
@@ -191,8 +190,8 @@ public class ChatMessageStore {
         return findSeenUuid(name) != null;
     }
 
-    public record SenderMeta(UUID senderUUID, Text senderName,
-                             Text rawContent, boolean isSystem,
+    public record SenderMeta(UUID senderUUID, Component senderName,
+                             Component rawContent, boolean isSystem,
                              String rawPlayerName,
                              boolean whisper, String whisperPartner) {}
 
@@ -279,7 +278,7 @@ public class ChatMessageStore {
         debugLog(() -> msg);
     }
 
-    public static EchoTracker.EchoMatch consumeEchoIfSenderMatches(UUID senderUUID, Text senderName, String incomingText) {
+    public static EchoTracker.EchoMatch consumeEchoIfSenderMatches(UUID senderUUID, Component senderName, String incomingText) {
         return EchoTracker.consumeEchoIfSenderMatches(senderUUID, senderName, incomingText);
     }
 
@@ -298,7 +297,7 @@ public class ChatMessageStore {
 
     // The local echo bubble is created with the bare name before the server's
     // decorated version (titles/prefixes) is known — patch it when the echo arrives
-    public static void updateLatestOwnSenderName(Text senderName) {
+    public static void updateLatestOwnSenderName(Component senderName) {
         for (int i = messages.size() - 1; i >= 0 && i >= messages.size() - 5; i--) {
             ChatMessage m = messages.get(i);
             if (!m.isOwn()) continue;
@@ -320,8 +319,8 @@ public class ChatMessageStore {
     // time is epoch millis so history spans days/weeks without losing the date
     public record ChatMessage(
         UUID senderUUID,
-        Text senderName,
-        Text content,
+        Component senderName,
+        Component content,
         long time,
         boolean isOwn,
         boolean isSystem,
@@ -335,7 +334,7 @@ public class ChatMessageStore {
         String group
     ) {
         // Wither helpers: field-level updates without rebuilding 13-arg constructors.
-        public ChatMessage withSenderName(Text newSenderName) {
+        public ChatMessage withSenderName(Component newSenderName) {
             return new ChatMessage(senderUUID, newSenderName, content, time,
                 isOwn, isSystem, replyContent, replySender, messageHash, duplicateCount,
                 rawPlayerName, whisper, whisperPartner, group);
@@ -357,7 +356,7 @@ public class ChatMessageStore {
     // Display names can't identify a sender reliably: the local echo bubble's name
     // gets patched from bare to decorated once the server echo arrives, so the next
     // local echo would never match it — compare raw player names when both are known
-    private static boolean isSameSender(ChatMessage last, Text senderName, String rawPlayerName) {
+    private static boolean isSameSender(ChatMessage last, Component senderName, String rawPlayerName) {
         if (rawPlayerName != null && !rawPlayerName.isEmpty()
             && last.rawPlayerName() != null && !last.rawPlayerName().isEmpty()) {
             return rawPlayerName.equals(last.rawPlayerName());
@@ -384,15 +383,15 @@ public class ChatMessageStore {
 
     // package-private test seam: headless unit tests stub this to return null
     // so addMessage never touches MinecraftClient.getInstance()
-    public static java.util.function.Supplier<net.minecraft.entity.player.PlayerEntity> localPlayerSupplier =
-        () -> net.minecraft.client.MinecraftClient.getInstance().player;
+    public static java.util.function.Supplier<net.minecraft.world.entity.player.Player> localPlayerSupplier =
+        () -> net.minecraft.client.Minecraft.getInstance().player;
 
-    public static void addMessage(Text content, UUID senderUUID, Text senderName, boolean isSystem, String rawPlayerName, boolean whisper, String whisperPartner, boolean localSend) {
+    public static void addMessage(Component content, UUID senderUUID, Component senderName, boolean isSystem, String rawPlayerName, boolean whisper, String whisperPartner, boolean localSend) {
         addMessage(content, senderUUID, senderName, isSystem, rawPlayerName, whisper, whisperPartner, localSend, null);
     }
 
     /** Group chat entry point (2.4.10): the packet handler passes the owning group. */
-    public static void addGroupMessage(Text content, UUID senderUUID, Text senderName,
+    public static void addGroupMessage(Component content, UUID senderUUID, Component senderName,
                                        String group, String quoteSender, String quoteContent) {
         if (group != null && !group.isEmpty()) {
             EchoTracker.putPendingMeta(
@@ -405,7 +404,7 @@ public class ChatMessageStore {
             false, null, false, group);
     }
 
-    public static void addMessage(Text content, UUID senderUUID, Text senderName, boolean isSystem, String rawPlayerName, boolean whisper, String whisperPartner, boolean localSend, String group) {
+    public static void addMessage(Component content, UUID senderUUID, Component senderName, boolean isSystem, String rawPlayerName, boolean whisper, String whisperPartner, boolean localSend, String group) {
         String messageHash = String.valueOf(content.getString().hashCode());
 
         // A message that is only whitespace/control chars — e.g. a server chat-clear
@@ -420,7 +419,7 @@ public class ChatMessageStore {
         // flattened by NCR where the UUID is nil. Name-only comparison misjudged
         // same-named players on offline (cracked) servers.
         boolean own = localPlayer != null && senderUUID != null
-            && senderUUID.equals(localPlayer.getUuid());
+            && senderUUID.equals(localPlayer.getUUID());
         if (!own) {
             own = (rawPlayerName != null && !rawPlayerName.isEmpty())
                 ? rawPlayerName.equals(playerName)
@@ -480,7 +479,7 @@ public class ChatMessageStore {
 
         messages.add(new ChatMessage(
             senderUUID,
-            senderName != null ? senderName : Text.literal(""),
+            senderName != null ? senderName : Component.literal(""),
             content,
             System.currentTimeMillis(),
             own,
@@ -548,15 +547,15 @@ public class ChatMessageStore {
         }
     }
 
-    public static Text sliceStyled(Text src, int start, int end) {
-        MutableText out = Text.empty();
+    public static Component sliceStyled(Component src, int start, int end) {
+        MutableComponent out = Component.empty();
         int[] pos = {0};
         src.visit((style, text) -> {
             int s = pos[0], e = s + text.length();
             pos[0] = e;
             int from = Math.max(start, s), to = Math.min(end, e);
             if (from < to)
-                out.append(Text.literal(text.substring(from - s, to - s)).fillStyle(style));
+                out.append(Component.literal(text.substring(from - s, to - s)).withStyle(style));
             return Optional.<Object>empty();
         }, Style.EMPTY);
         return out;
@@ -655,12 +654,12 @@ public class ChatMessageStore {
         return hasUnreadMentionFlag;
     }
 
-    public static Text quoteMessage(int index) {
-        if (index < 0 || index >= messages.size()) return Text.literal("");
+    public static Component quoteMessage(int index) {
+        if (index < 0 || index >= messages.size()) return Component.literal("");
         ChatMessage msg = messages.get(index);
         String qName = (msg.rawPlayerName() != null && !msg.rawPlayerName().isEmpty())
             ? msg.rawPlayerName() : msg.senderName().getString();
-        MutableText quote = Text.literal("> " + qName + ": ");
+        MutableComponent quote = Component.literal("> " + qName + ": ");
         quote.append(msg.content());
         return quote;
     }
@@ -731,12 +730,12 @@ public class ChatMessageStore {
     // Display-name extraction from a vanilla whisper line, keeping prefix decorations
     // and colors: "你悄悄地对[称号]E33EPUS说：hi" -> "[称号]E33EPUS".
     // Covers zh/en outgoing+incoming templates; falls back when no template matches.
-    public static Text extractWhisperDisplayName(Text fullLine, Text fallback) {
+    public static Component extractWhisperDisplayName(Component fullLine, Component fallback) {
         String fullStr = fullLine.getString();
         // zh incoming: "[称号]Steve悄悄地对你说：hi" -> name = [0, "悄悄地对你说")
         int qiaoIdx = fullStr.indexOf("悄悄地对你说");
         if (qiaoIdx > 0) {
-            Text area = sliceStyled(fullLine, 0, qiaoIdx);
+            Component area = sliceStyled(fullLine, 0, qiaoIdx);
             if (!area.getString().isBlank()) return stripItalic(area);
         }
         // zh outgoing: "你悄悄地对[称号]Steve说：hi" — the name after "悄悄地对"
@@ -750,7 +749,7 @@ public class ChatMessageStore {
             if (sayIdx > duiIdx) {
                 String prefix = fullStr.substring(0, duiIdx).trim();
                 if (!prefix.isEmpty() && !prefix.equals("你")) {
-                    Text area = sliceStyled(fullLine, fullStr.indexOf(prefix), fullStr.indexOf(prefix) + prefix.length());
+                    Component area = sliceStyled(fullLine, fullStr.indexOf(prefix), fullStr.indexOf(prefix) + prefix.length());
                     if (!area.getString().isBlank()) return stripItalic(area);
                 }
                 return fallback;
@@ -765,7 +764,7 @@ public class ChatMessageStore {
             if (colonIdx > toIdx) {
                 String prefix = fullStr.substring(0, toIdx).trim();
                 if (!prefix.isEmpty() && !prefix.equalsIgnoreCase("you")) {
-                    Text area = sliceStyled(fullLine, fullStr.indexOf(prefix), fullStr.indexOf(prefix) + prefix.length());
+                    Component area = sliceStyled(fullLine, fullStr.indexOf(prefix), fullStr.indexOf(prefix) + prefix.length());
                     if (!area.getString().isBlank()) return stripItalic(area);
                 }
                 return fallback;
@@ -773,7 +772,7 @@ public class ChatMessageStore {
         }
         int whisperIdx = fullStr.indexOf(" whispers to you");
         if (whisperIdx > 0) {
-            Text area = sliceStyled(fullLine, 0, whisperIdx);
+            Component area = sliceStyled(fullLine, 0, whisperIdx);
             if (!area.getString().isBlank()) return stripItalic(area);
         }
         return fallback;
@@ -782,59 +781,59 @@ public class ChatMessageStore {
     // Rebuild a component with italic cleared on every run — vanilla decorates
     // whisper lines gray+italic and the decoration style bleeds into extracted
     // names; 1.20.1 has no mapStyle, so walk the tree via visit.
-    private static Text stripItalic(Text src) {
-        MutableText out = Text.empty();
+    private static Component stripItalic(Component src) {
+        MutableComponent out = Component.empty();
         src.visit((style, text) -> {
-            out.append(Text.literal(text).fillStyle(style.withItalic(false)));
+            out.append(Component.literal(text).withStyle(style.withItalic(false)));
             return java.util.Optional.<Object>empty();
-        }, net.minecraft.text.Style.EMPTY);
+        }, net.minecraft.network.chat.Style.EMPTY);
         return out;
     }
 
-    private static Text ownDecoratedName;
+    private static Component ownDecoratedName;
 
     // Best available self name: tab list > decorated name seen in chat > scoreboard
     // team (color/prefix/suffix) > bare name. Vanilla servers send no tab-list
     // display name, so the chat cache is the reliable source for the outgoing
     // whisper repost; NCR servers add no cache before the first own line, so the
     // team color is the only blue-name source there.
-    public static Text ownDisplayName() {
-        var player = net.minecraft.client.MinecraftClient.getInstance().player;
-        if (player != null && player.networkHandler != null) {
-            var info = player.networkHandler.getPlayerListEntry(player.getUuid());
-            if (info != null && info.getDisplayName() != null) {
-                return info.getDisplayName();
+    public static Component ownDisplayName() {
+        var player = net.minecraft.client.Minecraft.getInstance().player;
+        if (player != null && player.connection != null) {
+            var info = player.connection.getPlayerInfo(player.getUUID());
+            if (info != null && info.getTabListDisplayName() != null) {
+                return info.getTabListDisplayName();
             }
         }
         if (ownDecoratedName != null) return ownDecoratedName;
-        if (player != null && player.getScoreboardTeam() != null) {
-            var team = player.getScoreboardTeam();
-            Text pfx = team.getPrefix();
-            Text sfx = team.getSuffix();
-            Formatting col = team.getColor();
+        if (player != null && player.getTeam() != null) {
+            var team = player.getTeam();
+            Component pfx = team.getPlayerPrefix();
+            Component sfx = team.getPlayerSuffix();
+            ChatFormatting col = team.getColor();
             boolean hasPfx = pfx != null && !pfx.getString().isEmpty();
             boolean hasSfx = sfx != null && !sfx.getString().isEmpty();
             if (hasPfx || hasSfx || col != null) {
-                MutableText name = Text.literal(player.getName().getString());
-                if (col != null) name = name.formatted(col);
-                MutableText out = Text.empty();
+                MutableComponent name = Component.literal(player.getName().getString());
+                if (col != null) name = name.withStyle(col);
+                MutableComponent out = Component.empty();
                 if (hasPfx) out.append(pfx);
                 out.append(name);
                 if (hasSfx) out.append(sfx);
                 return out;
             }
         }
-        return player != null ? player.getName() : Text.literal("?");
+        return player != null ? player.getName() : Component.literal("?");
     }
 
-    public static Text cachedOwnDisplayName() {
+    public static Component cachedOwnDisplayName() {
         return ownDecoratedName;
     }
 
     // Own-echoes skip addMessage entirely (consumeEchoIfSenderMatches returns
     // early), so callers on the message path must cache the decorated name too.
-    public static void cacheOwnDecoratedName(Text senderName) {
-        var player = net.minecraft.client.MinecraftClient.getInstance().player;
+    public static void cacheOwnDecoratedName(Component senderName) {
+        var player = net.minecraft.client.Minecraft.getInstance().player;
         String bare = player != null ? player.getName().getString() : "";
         if (senderName == null || bare.isEmpty()) return;
         String sn = senderName.getString();
@@ -930,7 +929,7 @@ public class ChatMessageStore {
     }
 
 
-    private static Text componentFrom(Map<String, Object> obj, String jsonKey, String textKey) {
+    private static Component componentFrom(Map<String, Object> obj, String jsonKey, String textKey) {
         return HistoryStore.componentFrom(obj, jsonKey, textKey);
     }
 
@@ -945,7 +944,7 @@ public class ChatMessageStore {
     }
 
 
-    public static Text parseStyledText(String s) {
+    public static Component parseStyledText(String s) {
         return HistoryStore.parseStyledText(s);
     }
 
@@ -1095,7 +1094,7 @@ public class ChatMessageStore {
     private static void cleanupOldHistory() {
         int days = ChatBubbleClientSetup.config().historyRetentionDays();
         if (days <= 0) return;
-        File dir = new File(MinecraftClient.getInstance().runDirectory, "e33chat/history");
+        File dir = new File(Minecraft.getInstance().gameDirectory, "e33chat/history");
         File[] files = dir.listFiles((d, n) -> n.endsWith(".json"));
         if (files == null) return;
         long now = System.currentTimeMillis();
@@ -1281,15 +1280,15 @@ public class ChatMessageStore {
             String sender = e.senderName() != null ? e.senderName() : "";
             String content = e.content() != null ? e.content() : "";
             if (content.isBlank()) continue;
-            if (BlockList.isPlayerBlocked(sender, Text.literal(sender),
+            if (BlockList.isPlayerBlocked(sender, Component.literal(sender),
                 ChatBubbleClientSetup.config().blockedPlayers())) continue;
             String key = mergeKey(sender, content, e.group());
             if (!takeFresh(seen, key)) continue;
             backlogKeys.merge(key, 1, Integer::sum);
             fresh.add(new ChatMessage(
                 e.senderUUID() != null ? e.senderUUID() : new UUID(0, 0),
-                Text.literal(sender),
-                Text.literal(content),
+                Component.literal(sender),
+                Component.literal(content),
                 e.time(),
                 false,
                 e.isSystem(),

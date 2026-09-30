@@ -1,7 +1,7 @@
 package com.niuqu.chatbubble.render;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL30;
 
 /**
@@ -76,9 +76,9 @@ public class BlurRenderer {
 
 
     public static void blurPanel(int x, int y, int w, int h) {
-        var mc = MinecraftClient.getInstance();
-        int mainFb = mc.getFramebuffer().fbo;
-        int fbH = mc.getFramebuffer().textureHeight;
+        var mc = Minecraft.getInstance();
+        int mainFb = mc.getMainRenderTarget().frameBufferId;
+        int fbH = mc.getMainRenderTarget().height;
         if (w <= 0 || h <= 0) return;
 
         int oldFb = GL30.glGetInteger(GL30.GL_FRAMEBUFFER_BINDING);
@@ -89,7 +89,7 @@ public class BlurRenderer {
         // Exact (possibly fractional) GUI scale: truncating to int made the blur
         // region drift off the panel rectangle on fractional scales (2.4.4 fix,
         // same root cause as the panel-width pixel bug).
-        double s = mc.getWindow().getScaleFactor();
+        double s = mc.getWindow().getGuiScale();
         x = (int) Math.round(x * s);
         y = (int) Math.round(y * s);
         w = (int) Math.round(w * s);

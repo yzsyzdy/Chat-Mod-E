@@ -7,11 +7,10 @@ import com.niuqu.chatbubble.network.GroupChatPayload;
 import com.niuqu.chatbubble.network.GroupListPayload;
 import com.niuqu.chatbubble.network.HistoryPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.WorldSavePath;
-
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.storage.LevelResource;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -107,50 +106,50 @@ public final class GroupManager {
 
     // ==== Mutation (server thread) — each sends its own feedback and re-syncs ====
 
-    public static void create(ServerPlayerEntity player, String name) {
+    public static void create(ServerPlayer player, String name) {
         if (!guard(player)) return;
         MinecraftServer server = player.getServer();
         if (server == null) return;
         ensureLoaded(server);
         if (!isValidGroupName(name)) { fail(player, "e33chat.group.bad_name", MAX_NAME_LEN); return; }
         if (groups.containsKey(name)) { fail(player, "e33chat.group.exists", name); return; }
-        if (ChatBubbleMod.groupCreateOpOnly() && !player.hasPermissionLevel(2)) {
+        if (ChatBubbleMod.groupCreateOpOnly() && !player.hasPermissions(2)) {
             fail(player, "e33chat.group.op_only");
             return;
         }
         int max = ChatBubbleMod.groupMaxCount();
         if (groups.size() >= max) { fail(player, "e33chat.group.limit", max); return; }
         LinkedHashSet<UUID> members = new LinkedHashSet<>();
-        members.add(player.getUuid());
-        groups.put(name, new Group(player.getUuid(), members));
+        members.add(player.getUUID());
+        groups.put(name, new Group(player.getUUID(), members));
         if (!save(server)) { fail(player, "e33chat.group.save_failed"); return; }
         ok(player, "e33chat.group.created", name);
         broadcastGroupList(server);
     }
 
-    public static void join(ServerPlayerEntity player, String name) {
+    public static void join(ServerPlayer player, String name) {
         if (!guard(player)) return;
         MinecraftServer server = player.getServer();
         if (server == null) return;
         ensureLoaded(server);
         Group g = groups.get(name);
         if (g == null) { fail(player, "e33chat.group.missing", name); return; }
-        if (g.members.contains(player.getUuid())) { fail(player, "e33chat.group.already_in", name); return; }
+        if (g.members.contains(player.getUUID())) { fail(player, "e33chat.group.already_in", name); return; }
         int max = ChatBubbleMod.groupMaxMembers();
         if (g.members.size() >= max) { fail(player, "e33chat.group.full", name, max); return; }
-        g.members.add(player.getUuid());
+        g.members.add(player.getUUID());
         if (!save(server)) { fail(player, "e33chat.group.save_failed"); return; }
         ok(player, "e33chat.group.joined", name);
         broadcastGroupList(server);
     }
 
-    public static void leave(ServerPlayerEntity player, String name) {
+    public static void leave(ServerPlayer player, String name) {
         if (!guard(player)) return;
         MinecraftServer server = player.getServer();
         if (server == null) return;
         ensureLoaded(server);
         Group g = groups.get(name);
-        if (g == null || !g.members.remove(player.getUuid())) {
+        if (g == null || !g.members.remove(player.getUUID())) {
             fail(player, "e33chat.group.not_member_short", name);
             return;
         }
@@ -158,7 +157,7 @@ public final class GroupManager {
         if (g.members.isEmpty()) {
             groups.remove(name);
             disbanded = true;
-        } else if (player.getUuid().equals(g.owner)) {
+        } else if (player.getUUID().equals(g.owner)) {
             g.owner = g.members.iterator().next();
         }
         if (!save(server)) {
@@ -169,14 +168,14 @@ public final class GroupManager {
         broadcastGroupList(server);
     }
 
-    public static void delete(ServerPlayerEntity player, String name) {
+    public static void delete(ServerPlayer player, String name) {
         if (!guard(player)) return;
         MinecraftServer server = player.getServer();
         if (server == null) return;
         ensureLoaded(server);
         Group g = groups.get(name);
         if (g == null) { fail(player, "e33chat.group.missing", name); return; }
-        if (!player.getUuid().equals(g.owner) && !player.hasPermissionLevel(2)) {
+        if (!player.getUUID().equals(g.owner) && !player.hasPermissions(2)) {
             fail(player, "e33chat.group.not_owner", name);
             return;
         }
@@ -186,41 +185,41 @@ public final class GroupManager {
         broadcastGroupList(server);
     }
 
-    public static void say(ServerPlayerEntity sender, String name, String content) {
+    public static void say(ServerPlayer sender, String name, String content) {
         if (!ChatBubbleMod.groupsEnabled()) { fail(sender, "e33chat.group.disabled"); return; }
         MinecraftServer server = sender.getServer();
         if (server == null) return;
         ensureLoaded(server);
         Group g = groups.get(name);
         if (g == null) { fail(sender, "e33chat.group.missing", name); return; }
-        if (!g.members.contains(sender.getUuid())) { fail(sender, "e33chat.group.not_member_short", name); return; }
+        if (!g.members.contains(sender.getUUID())) { fail(sender, "e33chat.group.not_member_short", name); return; }
         long now = System.currentTimeMillis();
-        Long last = lastSay.get(sender.getUuid());
+        Long last = lastSay.get(sender.getUUID());
         if (last != null && now - last < SAY_COOLDOWN_MS) { fail(sender, "e33chat.group.cooldown"); return; }
         String text = content == null ? "" : content.trim();
         if (text.isEmpty()) { fail(sender, "e33chat.group.empty"); return; }
         if (text.length() > MAX_CONTENT) text = text.substring(0, MAX_CONTENT);
-        lastSay.put(sender.getUuid(), now);
+        lastSay.put(sender.getUUID(), now);
 
         String senderName = sender.getName().getString();
-        ChatBubbleMod.QuotePending quote = ChatBubbleMod.consumeQuote(sender.getUuid());
+        ChatBubbleMod.QuotePending quote = ChatBubbleMod.consumeQuote(sender.getUUID());
         GroupChatPayload packet = new GroupChatPayload(
-            sender.getUuid(), senderName, name, text,
+            sender.getUUID(), senderName, name, text,
             quote != null ? quote.quotedSenderName() : null,
             quote != null ? quote.quotedContent() : null);
         String vanillaLine = "[" + name + "] <" + senderName + "> " + text;
 
-        List<ServerPlayerEntity> players = server.getPlayerManager().getPlayerList();
-        for (ServerPlayerEntity p : players) {
-            if (!g.members.contains(p.getUuid())) continue;
-            if (modClients.contains(p.getUuid())) {
+        List<ServerPlayer> players = server.getPlayerList().getPlayers();
+        for (ServerPlayer p : players) {
+            if (!g.members.contains(p.getUUID())) continue;
+            if (modClients.contains(p.getUUID())) {
                 ServerPlayNetworking.send(p, packet);
             } else {
-                p.sendMessage(Text.literal(vanillaLine), false);
+                p.displayClientMessage(Component.literal(vanillaLine), false);
             }
         }
         ChatBubbleMod.addHistoryEntry(new HistoryPayload.HistoryEntry(
-            sender.getUuid(), senderName, text, now, false,
+            sender.getUUID(), senderName, text, now, false,
             quote != null ? quote.quotedContent() : null,
             quote != null ? quote.quotedSenderName() : null,
             name));
@@ -228,8 +227,8 @@ public final class GroupManager {
 
     // ==== Client tracking + directory sync ====
 
-    public static void onClientHello(ServerPlayerEntity player) {
-        modClients.add(player.getUuid());
+    public static void onClientHello(ServerPlayer player) {
+        modClients.add(player.getUUID());
         MinecraftServer server = player.getServer();
         if (server != null) ensureLoaded(server);
         sendGroupList(player);
@@ -240,7 +239,7 @@ public final class GroupManager {
         lastSay.remove(id);
     }
 
-    public static void sendGroupList(ServerPlayerEntity player) {
+    public static void sendGroupList(ServerPlayer player) {
         // Parity with Forge/Neo: the JOIN-time push can precede ClientHello, so
         // it must not send an empty directory from a not-yet-loaded store.
         ensureLoaded(player.getServer());
@@ -250,19 +249,19 @@ public final class GroupManager {
         List<String> mine = new ArrayList<>();
         for (var e : groups.entrySet()) {
             counts.add(e.getValue().members.size());
-            if (e.getValue().members.contains(player.getUuid())) mine.add(e.getKey());
+            if (e.getValue().members.contains(player.getUUID())) mine.add(e.getKey());
         }
         ServerPlayNetworking.send(player, new GroupListPayload(enabled, names, counts, mine));
     }
 
     public static void broadcastGroupList(MinecraftServer server) {
         if (server == null) return;
-        for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
-            if (modClients.contains(p.getUuid())) sendGroupList(p);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (modClients.contains(p.getUUID())) sendGroupList(p);
         }
     }
 
-    public static void handleAction(ServerPlayerEntity player, int action, String name) {
+    public static void handleAction(ServerPlayer player, int action, String name) {
         switch (action) {
             case com.niuqu.chatbubble.network.GroupActionPayload.CREATE -> create(player, name);
             case com.niuqu.chatbubble.network.GroupActionPayload.JOIN -> join(player, name);
@@ -287,7 +286,7 @@ public final class GroupManager {
     }
 
     private static Path file(MinecraftServer server) {
-        return server.getSavePath(WorldSavePath.ROOT)
+        return server.getWorldPath(LevelResource.ROOT)
             .resolve("serverconfig").resolve(FILE_NAME);
     }
 
@@ -364,18 +363,18 @@ public final class GroupManager {
 
     // ==== feedback helpers ====
 
-    private static boolean guard(ServerPlayerEntity p) {
+    private static boolean guard(ServerPlayer p) {
         if (ChatBubbleMod.groupsEnabled()) return true;
         fail(p, "e33chat.group.disabled");
         return false;
     }
 
-    private static void ok(ServerPlayerEntity p, String key, Object... args) {
-        p.sendMessage(Text.translatable(key, args), false);
+    private static void ok(ServerPlayer p, String key, Object... args) {
+        p.displayClientMessage(Component.translatable(key, args), false);
     }
 
-    private static void fail(ServerPlayerEntity p, String key, Object... args) {
-        p.sendMessage(Text.translatable(key, args), false);
+    private static void fail(ServerPlayer p, String key, Object... args) {
+        p.displayClientMessage(Component.translatable(key, args), false);
     }
 
     // ==== persistence shapes ====

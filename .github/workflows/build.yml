@@ -3,8 +3,10 @@ name: Build
 # 单分支多目标：支持哪些目标写在 versions/targets.json 里，这个工作流里没有分支名。
 # 新增一个目标 = 加一条 JSON + 建工程目录，不必碰这个文件。
 #
-# 旧的平台分支（Forge-1.20.1 / Neoforge-1.21.1 / Fabric-1.21.1）各自还带着自己那份
-# build.yml，随分支一起归档；main 上的构建不发布任何东西，发版走 release.yml。
+# 本仓现在只有一个目标（26.2 Fabric），但矩阵仍然是从 targets.json 算出来的 ——
+# 工作流不假设「只有一个」，将来加目标也不用改这里。
+#
+# main 上的构建不发布任何东西，发版走 release.yml。
 
 on:
   push:
@@ -32,7 +34,7 @@ jobs:
       - uses: actions/checkout@v7
 
       # 本地与 CI 跑的是同一个脚本：矩阵是规则、身份只有一份、工程目录与矩阵条目
-      # 必须互相存在、映射层孪生不缺不重。红的原因会直接写在日志里。
+      # 必须互相存在。红的原因会直接写在日志里。
       - name: 校验 versions/ 与各平台的身份来源
         run: python3 tools/verify_targets.py --matrix-out "$RUNNER_TEMP/matrix.json"
 
@@ -64,13 +66,12 @@ jobs:
           # PR 只读缓存；推 main 才刷新它。
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      # Forge / NeoForge 的 test 任务带 onlyIf(runTests) 闸（JUnit 离线解析的缘故），
-      # 所以三端统一带 -PrunTests；Fabric 端没有这个闸，多传无害。
+      # 26.2 要 Java 25（targets.json 里声明，矩阵把它带下来）。
       - name: 构建并测试
         working-directory: ${{ matrix.project }}
         run: |
           chmod +x ./gradlew
-          ./gradlew build -PrunTests --no-daemon
+          ./gradlew build --no-daemon
 
       # 取产物：sources 一律不要，且每个目标必须恰好一个发布 jar ——
       # 产物名有歧义时取件规则要重新定，不能静默多拿少拿。

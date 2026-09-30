@@ -1,11 +1,10 @@
 package com.niuqu.chatbubble.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
-
 import java.util.List;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * S2C group directory sync: pushed on hello, login and after every group
@@ -15,26 +14,26 @@ import java.util.List;
  */
 public record GroupListPayload(boolean enabled, List<String> names,
                                List<Integer> memberCounts, List<String> myGroups)
-        implements CustomPayload {
+        implements CustomPacketPayload {
 
     // Decode-side caps: a hostile server must not balloon client memory
     private static final int MAX_GROUPS = 200;
 
-    public static final CustomPayload.Id<GroupListPayload> ID =
-        new CustomPayload.Id<>(Identifier.of("e33chat", "group_list"));
+    public static final CustomPacketPayload.Type<GroupListPayload> ID =
+        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "group_list"));
 
-    public static final PacketCodec<PacketByteBuf, GroupListPayload> CODEC = PacketCodec.of(
+    public static final StreamCodec<FriendlyByteBuf, GroupListPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {
             buf.writeBoolean(value.enabled);
-            buf.writeCollection(value.names, (b, s) -> b.writeString(s, 64));
+            buf.writeCollection(value.names, (b, s) -> b.writeUtf(s, 64));
             buf.writeCollection(value.memberCounts, (b, c) -> b.writeVarInt(c));
-            buf.writeCollection(value.myGroups, (b, s) -> b.writeString(s, 64));
+            buf.writeCollection(value.myGroups, (b, s) -> b.writeUtf(s, 64));
         },
         buf -> new GroupListPayload(
             buf.readBoolean(),
-            cap(buf.readList(b -> b.readString(64))),
-            cap(buf.readList(PacketByteBuf::readVarInt)),
-            cap(buf.readList(b -> b.readString(64)))
+            cap(buf.readList(b -> b.readUtf(64))),
+            cap(buf.readList(FriendlyByteBuf::readVarInt)),
+            cap(buf.readList(b -> b.readUtf(64)))
         )
     );
 
@@ -43,7 +42,7 @@ public record GroupListPayload(boolean enabled, List<String> names,
     }
 
     @Override
-    public CustomPayload.Id<? extends CustomPayload> getId() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 

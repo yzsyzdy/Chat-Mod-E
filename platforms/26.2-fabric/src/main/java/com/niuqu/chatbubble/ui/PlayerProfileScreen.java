@@ -5,15 +5,14 @@ import com.niuqu.chatbubble.render.ChatBubbleTheme;
 import com.niuqu.chatbubble.render.RoundRectRenderer;
 import com.niuqu.chatbubble.render.SkinResolver;
 import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.GameMode;
-
 import java.util.UUID;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.GameType;
 
 /**
  * 玩家资料卡（2.4.10）：右键头像菜单"查看资料"打开。展示头像（face+hat）、
@@ -34,7 +33,7 @@ public class PlayerProfileScreen extends Screen {
     private int btnWhisperX, btnCopyX, btnY, btnW;
 
     public PlayerProfileScreen(Screen parent, String playerName) {
-        super(Text.translatable("e33chat.profile.title"));
+        super(Component.translatable("e33chat.profile.title"));
         this.parent = parent;
         this.playerName = playerName;
     }
@@ -49,19 +48,19 @@ public class PlayerProfileScreen extends Screen {
         btnY = panelY + PANEL_H - 12 - BTN_H;
     }
 
-    private PlayerListEntry info() {
-        MinecraftClient mc = MinecraftClient.getInstance();
+    private PlayerInfo info() {
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return null;
-        PlayerListEntry exact = mc.getNetworkHandler().getPlayerListEntry(playerName);
+        PlayerInfo exact = mc.getConnection().getPlayerInfo(playerName);
         if (exact != null) return exact;
-        for (PlayerListEntry p : mc.getNetworkHandler().getPlayerList()) {
+        for (PlayerInfo p : mc.getConnection().getOnlinePlayers()) {
             if (p.getProfile().getName().equalsIgnoreCase(playerName)) return p;
         }
         return null;
     }
 
     @Override
-    public void render(DrawContext g, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g, mouseX, mouseY, partialTick);
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
@@ -71,43 +70,43 @@ public class PlayerProfileScreen extends Screen {
         RoundRectRenderer.fill(g, panelX, panelY, panelX + PANEL_W, panelY + PANEL_H,
             8, 0xF21A1C20);
 
-        PlayerListEntry info = info();
+        PlayerInfo info = info();
         boolean online = info != null;
-        boolean isSelf = MinecraftClient.getInstance().player != null
-            && MinecraftClient.getInstance().player.getName().getString().equalsIgnoreCase(playerName);
+        boolean isSelf = Minecraft.getInstance().player != null
+            && Minecraft.getInstance().player.getName().getString().equalsIgnoreCase(playerName);
         UUID uuid = online ? info.getProfile().getId() : null;
 
         // Hero: head (face + hat layer)
         int headS = 40;
         int headX = panelX + (PANEL_W - headS) / 2;
         int headY = panelY + 14;
-        Identifier skin = SkinResolver.getSkin(uuid, playerName);
+        ResourceLocation skin = SkinResolver.getSkin(uuid, playerName);
         ColoredTextureRenderer.drawWithAlpha(g, skin,
             headX, headY, headS, headS, 8.0F, 8.0F, 8, 8, 64, 64, 1f);
         ColoredTextureRenderer.drawWithAlpha(g, skin,
             headX - 3, headY - 3, headS + 6, headS + 6, 40.0F, 8.0F, 8, 8, 64, 64, 1f);
 
         // Name + badge
-        int nameW = textRenderer.getWidth(playerName);
-        String badge = Text.translatable(isSelf ? "e33chat.profile.self"
+        int nameW = font.width(playerName);
+        String badge = Component.translatable(isSelf ? "e33chat.profile.self"
             : online ? "e33chat.profile.online" : "e33chat.profile.offline").getString();
         int badgeColor = isSelf ? 0xFF55FFFF : online ? 0xFF55FF55 : 0xFF888888;
-        int totalW = nameW + 6 + textRenderer.getWidth(badge);
+        int totalW = nameW + 6 + font.width(badge);
         int nameX = panelX + (PANEL_W - totalW) / 2;
         int nameY = headY + headS + 8;
-        g.drawText(textRenderer, playerName, nameX, nameY, c.textPrimary(), false);
-        g.drawText(textRenderer, badge, nameX + nameW + 6, nameY, badgeColor, false);
+        g.drawString(font, playerName, nameX, nameY, c.textPrimary(), false);
+        g.drawString(font, badge, nameX + nameW + 6, nameY, badgeColor, false);
 
         // Fields
         int fieldX = panelX + 16;
         int fieldY = nameY + 18;
-        int lineH = textRenderer.fontHeight + 4;
-        fieldY = drawField(g, Text.translatable("e33chat.profile.uuid").getString(),
+        int lineH = font.lineHeight + 4;
+        fieldY = drawField(g, Component.translatable("e33chat.profile.uuid").getString(),
             uuid != null ? uuid.toString() : "—", fieldX, fieldY, lineH, c);
-        fieldY = drawField(g, Text.translatable("e33chat.profile.latency").getString(),
+        fieldY = drawField(g, Component.translatable("e33chat.profile.latency").getString(),
             online ? info.getLatency() + " ms" : "—", fieldX, fieldY, lineH, c);
-        GameMode gt = online ? info.getGameMode() : null;
-        drawField(g, Text.translatable("e33chat.profile.gamemode").getString(),
+        GameType gt = online ? info.getGameMode() : null;
+        drawField(g, Component.translatable("e33chat.profile.gamemode").getString(),
             gt != null ? gt.getName() : "—", fieldX, fieldY, lineH, c);
 
         // Buttons
@@ -117,21 +116,21 @@ public class PlayerProfileScreen extends Screen {
             hoverW ? 0xFF3A5FCD : 0xFF2C4A9E);
         RoundRectRenderer.fill(g, btnCopyX, btnY, btnCopyX + btnW, btnY + BTN_H, 4,
             hoverC ? 0xFF4A4A52 : 0xFF36363E);
-        String whisperLabel = Text.translatable("e33chat.context.whisper").getString();
-        String copyLabel = Text.translatable("e33chat.profile.copy_uuid").getString();
-        g.drawText(textRenderer, whisperLabel,
-            btnWhisperX + (btnW - textRenderer.getWidth(whisperLabel)) / 2, btnY + 4, 0xFFFFFFFF, false);
-        g.drawText(textRenderer, copyLabel,
-            btnCopyX + (btnW - textRenderer.getWidth(copyLabel)) / 2, btnY + 4, 0xFFFFFFFF, false);
+        String whisperLabel = Component.translatable("e33chat.context.whisper").getString();
+        String copyLabel = Component.translatable("e33chat.profile.copy_uuid").getString();
+        g.drawString(font, whisperLabel,
+            btnWhisperX + (btnW - font.width(whisperLabel)) / 2, btnY + 4, 0xFFFFFFFF, false);
+        g.drawString(font, copyLabel,
+            btnCopyX + (btnW - font.width(copyLabel)) / 2, btnY + 4, 0xFFFFFFFF, false);
     }
 
-    private int drawField(DrawContext g, String label, String value, int x, int y, int lineH,
+    private int drawField(GuiGraphics g, String label, String value, int x, int y, int lineH,
                           ChatBubbleTheme.Colors c) {
-        g.drawText(textRenderer, label, x, y, c.textSecondary(), false);
+        g.drawString(font, label, x, y, c.textSecondary(), false);
         String v = value;
         int maxW = PANEL_W - 32 - 60;
-        if (textRenderer.getWidth(v) > maxW) v = textRenderer.trimToWidth(v, maxW - textRenderer.getWidth("…")) + "…";
-        g.drawText(textRenderer, v, x + 60, y, c.textPrimary(), false);
+        if (font.width(v) > maxW) v = font.plainSubstrByWidth(v, maxW - font.width("…")) + "…";
+        g.drawString(font, v, x + 60, y, c.textPrimary(), false);
         return y + lineH;
     }
 
@@ -143,20 +142,20 @@ public class PlayerProfileScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
             if (over(mouseX, mouseY, btnWhisperX, btnY, btnW, BTN_H)) {
-                MinecraftClient mc = MinecraftClient.getInstance();
-                close();
-                if (mc.player != null) mc.player.networkHandler.sendChatCommand("msg " + playerName + " ");
+                Minecraft mc = Minecraft.getInstance();
+                onClose();
+                if (mc.player != null) mc.player.connection.sendCommand("msg " + playerName + " ");
                 return true;
             }
             if (over(mouseX, mouseY, btnCopyX, btnY, btnW, BTN_H)) {
-                PlayerListEntry info = info();
+                PlayerInfo info = info();
                 String text = info != null ? info.getProfile().getId().toString() : playerName;
-                MinecraftClient.getInstance().keyboard.setClipboard(text);
+                Minecraft.getInstance().keyboardHandler.setClipboard(text);
                 return true;
             }
             // Click outside the panel closes (WeChat-style dismiss)
             if (!over(mouseX, mouseY, panelX, panelY, PANEL_W, PANEL_H)) {
-                close();
+                onClose();
                 return true;
             }
         }
@@ -164,12 +163,12 @@ public class PlayerProfileScreen extends Screen {
     }
 
     @Override
-    public void close() {
-        MinecraftClient.getInstance().setScreen(parent);
+    public void onClose() {
+        Minecraft.getInstance().setScreen(parent);
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 }

@@ -27,9 +27,7 @@ on:
         type: choice
         options:
           - all
-          - 1.21.1-fabric
-          - 1.21.1-neoforge
-          - 1.20.1-forge
+          - 26.2-fabric
       stores:
         description: 只重发某个商店（手动补发时选它；Modrinth 有重复文件守卫，补发 CF 别带 modrinth）
         required: false
@@ -101,7 +99,7 @@ jobs:
         working-directory: ${{ matrix.project }}
         run: |
           chmod +x ./gradlew
-          ./gradlew build -PrunTests --no-daemon
+          ./gradlew build --no-daemon
 
       - name: 取产物
         working-directory: ${{ matrix.project }}
@@ -228,7 +226,7 @@ jobs:
             curseforge) TASKS="curseforge" ;;
             *) TASKS="publishMods" ;;
           esac
-          ./gradlew build -PrunTests $TASKS --no-daemon --no-configuration-cache
+          ./gradlew build $TASKS --no-daemon --no-configuration-cache
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}

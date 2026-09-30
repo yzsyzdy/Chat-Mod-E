@@ -4,7 +4,7 @@ import com.niuqu.chatbubble.network.ConfigSyncV2Payload;
 import com.niuqu.chatbubble.network.MediaUploadPayload;
 import com.niuqu.chatbubble.network.ServerConfigDto;
 import io.netty.buffer.Unpooled;
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,11 +16,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PacketDecodeBoundsTest {
 
-    private static PacketByteBuf buf() { return new PacketByteBuf(Unpooled.buffer()); }
+    private static FriendlyByteBuf buf() { return new FriendlyByteBuf(Unpooled.buffer()); }
 
     @Test
     void configSyncV2TemplateCountIsCapped() {
-        PacketByteBuf b = buf();
+        FriendlyByteBuf b = buf();
         b.writeBoolean(true);
         b.writeInt(Integer.MAX_VALUE);   // hostile chat-template count
         b.writeInt(0);
@@ -33,7 +33,7 @@ class PacketDecodeBoundsTest {
 
     @Test
     void serverConfigDtoTemplateCountIsCapped() {
-        PacketByteBuf b = buf();
+        FriendlyByteBuf b = buf();
         for (int i = 0; i < 7; i++) b.writeBoolean(false);
         b.writeInt(Integer.MAX_VALUE);   // hostile chat-template count
         b.writeInt(0);
@@ -45,7 +45,7 @@ class PacketDecodeBoundsTest {
 
     @Test
     void mediaUploadOversizedStringIsRejectedNotClamped() {
-        PacketByteBuf b = buf();
+        FriendlyByteBuf b = buf();
         b.writeLong(1L); b.writeInt(0); b.writeInt(1); b.writeInt(1);
         b.writeInt(Integer.MAX_VALUE);   // hostile content-type length
         assertThrows(RuntimeException.class, () -> MediaUploadPayload.CODEC.decode(b),
@@ -54,20 +54,20 @@ class PacketDecodeBoundsTest {
 
     @Test
     void mediaUploadOversizedChunkIsRejected() {
-        PacketByteBuf b = buf();
+        FriendlyByteBuf b = buf();
         b.writeLong(1L); b.writeInt(0); b.writeInt(1); b.writeInt(1);
-        b.writeString("image/png");
+        b.writeUtf("image/png");
         b.writeInt(Integer.MAX_VALUE);   // hostile chunk length
         assertThrows(RuntimeException.class, () -> MediaUploadPayload.CODEC.decode(b));
     }
 
     @Test
     void chatMetaMentionCountIsCapped() {
-        PacketByteBuf b = buf();
-        b.writeString(new java.util.UUID(0L, 0L).toString());
-        b.writeString("Alex"); b.writeString("h"); b.writeString("Steve"); b.writeString("quoted");
+        FriendlyByteBuf b = buf();
+        b.writeUtf(new java.util.UUID(0L, 0L).toString());
+        b.writeUtf("Alex"); b.writeUtf("h"); b.writeUtf("Steve"); b.writeUtf("quoted");
         b.writeVarInt(Integer.MAX_VALUE);   // hostile mention count
-        for (int i = 0; i < 200; i++) b.writeString("t" + i);
+        for (int i = 0; i < 200; i++) b.writeUtf("t" + i);
         com.niuqu.chatbubble.network.ChatMetaPayload p =
             com.niuqu.chatbubble.network.ChatMetaPayload.CODEC.decode(b);
         assertEquals(200, p.mentionTargets().size(),

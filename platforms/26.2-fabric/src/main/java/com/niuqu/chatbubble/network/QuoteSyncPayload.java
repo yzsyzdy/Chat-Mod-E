@@ -1,25 +1,26 @@
 package com.niuqu.chatbubble.network;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import Type;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 
 public record QuoteSyncPayload(String quotedSenderName, String quotedContent, String messageHash)
-        implements CustomPayload {
+        implements CustomPacketPayload {
 
-    public static final CustomPayload.Id<QuoteSyncPayload> ID =
-        new CustomPayload.Id<>(Identifier.of("e33chat", "quote_sync"));
+    public static final CustomPacketPayload.Type<QuoteSyncPayload> ID =
+        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "quote_sync"));
 
-    public static final PacketCodec<PacketByteBuf, QuoteSyncPayload> CODEC = PacketCodec.of(
+    public static final StreamCodec<FriendlyByteBuf, QuoteSyncPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {
-            buf.writeString(value.quotedSenderName);
-            buf.writeString(value.quotedContent);
-            buf.writeString(value.messageHash);
+            buf.writeUtf(value.quotedSenderName);
+            buf.writeUtf(value.quotedContent);
+            buf.writeUtf(value.messageHash);
         },
-        buf -> new QuoteSyncPayload(buf.readString(), buf.readString(), buf.readString())
+        buf -> new QuoteSyncPayload(buf.readUtf(), buf.readUtf(), buf.readUtf())
     );
 
     @Override
-    public Id<QuoteSyncPayload> getId() { return ID; }
+    public Type<QuoteSyncPayload> type() { return ID; }
 }

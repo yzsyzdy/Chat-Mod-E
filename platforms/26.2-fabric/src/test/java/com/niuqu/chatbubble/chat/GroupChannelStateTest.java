@@ -2,11 +2,11 @@ package com.niuqu.chatbubble.chat;
 
 import com.niuqu.chatbubble.server.GroupManager;
 import com.niuqu.chatbubble.store.ChatMessageStore.ChatMessage;
-import net.minecraft.text.Text;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.network.chat.Component;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,8 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GroupChannelStateTest {
 
     private static ChatMessage msg(boolean isSystem, String group) {
-        return new ChatMessage(new UUID(0, 1), Text.literal("Steve"),
-            Text.literal("hello"), 0L, false, isSystem,
+        return new ChatMessage(new UUID(0, 1), Component.literal("Steve"),
+            Component.literal("hello"), 0L, false, isSystem,
             null, null, "h", 1, "Steve", false, null, group);
     }
 

@@ -1,9 +1,9 @@
 package com.niuqu.chatbubble.mixin;
 
 import com.niuqu.chatbubble.render.HudVisibility;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphics;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,11 +17,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * opening the chat panel made the hand disappear. Cancelling the HUD render
  * here skips only the HUD layer.
  */
-@Mixin(InGameHud.class)
+@Mixin(Gui.class)
 public class InGameHudMixin {
 
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void e33chat$hideHudForTranslucentScreens(DrawContext context, RenderTickCounter tickCounter,
+    private void e33chat$hideHudForTranslucentScreens(GuiGraphics context, DeltaTracker tickCounter,
                                                       CallbackInfo ci) {
         if (HudVisibility.shouldHideHud()) ci.cancel();
     }
