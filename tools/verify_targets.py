@@ -2,17 +2,19 @@
 """校验 versions/ 里的目标矩阵 —— 本地与 CI 跑的是同一份。
 
 结构照搬 AtomChat 的同名脚本。目标写进 versions/targets.json，本脚本是那句声明的执行者：
-  * 矩阵的规则（每个 Minecraft 版本都要有 Fabric / NeoForge / Forge 三条）
-  * 映射家族与映射层的双向约束（有两个在建目标的家族必须有层；有层的目标必须挂层）
+  * 矩阵的规则（每个 Minecraft 版本都要凑齐 versions/loaders.json 里列出的加载器）
   * buildable: true 的目标不许留 unverified
   * 工程目录存在就必须在矩阵里，反之亦然（不许有"没有任何地方编"的源码）
   * 各平台不许自己定义身份键（mod_version 等只在仓库根那一份）
   * 矩阵里写的 java / gradle 与工程里实际的 toolchain / wrapper 一致（防止两边各写一份然后漂移）
-  * 映射层的每个文件在另一映射家族上必须有同路径孪生，且不许逐字相同（逐字相同 = 本该进 shared/）
   * 钉等清单（versions/pinned-equal.json）里的多平台副本必须逐字相同
   * 共享层不许用高于最低目标 Java 级别的语法（模式匹配 switch）
   * 服务端侧的类不许引用客户端类型
-  * 依赖方向：shared/ 只许引 shared/；layers/ 只许引 shared/layers，或三端同路径都存在的类
+  * 依赖方向：shared/ 只许引 shared/；layers/ 只许引 shared/layers，或本加载器家族全部在建目标都有的类
+
+【映射家族那套检查已经撤掉】26.1 起 Minecraft 不再混淆、Fabric 也不再产出 Yarn，全仓只剩
+一套官方名，所以不再有 mapping 轴、映射层、孪生副本、mapping-aliases 表。哪天又出现两套
+并行命名，再把 check_mapping_twins / mapping 轴 / aliases 加回来。
 
 用法：
   python tools/verify_targets.py                       # 只校验，打印摘要
@@ -28,7 +30,6 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-LOADERS = ["Fabric", "NeoForge", "Forge"]
 REQUIRED_FIELDS = ["minecraft", "loader", "mappings", "java", "gradle", "project", "buildable", "layers"]
 IDENTITY_KEYS = [
     "mod_id", "mod_name", "mod_license", "mod_group_id",
@@ -84,12 +85,11 @@ def check_root_identity() -> None:
         fail(f"仓库根的 gradle.properties 缺身份键：{', '.join(missing)}")
 
 
-def check_targets(targets: dict, layers: dict, aliases: dict) -> None:
+def check_targets(targets: dict, layers: dict, loaders: list) -> None:
     if not targets:
         fail("versions/targets.json 里一个目标都没有 —— 文件坏了或被改空了")
         return
 
-    mappings = {}
     seen_combo = set()
 
     for name, t in targets.items():
@@ -101,7 +101,6 @@ def check_targets(targets: dict, layers: dict, aliases: dict) -> None:
 
         mc, loader = t["minecraft"], t["loader"]
         seen_combo.add((mc, loader))
-        mappings.setdefault(t["mappings"], []).append(name)
 
         for layer in t["layers"]:
             if layer not in layers:
@@ -125,41 +124,18 @@ def check_targets(targets: dict, layers: dict, aliases: dict) -> None:
             check_platform_identity(name, project)
             check_platform_toolchain(name, project, t)
 
-    # 映射家族不止一个时（本仓就是：Fabric 走 Yarn，另两端走官方名），
-    # 每个【有两个以上成员在建】的家族都要有对应的映射层 —— 那种家族里的平行副本是可共享的，
-    # 让它们各存一份就是把「三端同步」缩小成「两端同步」。只有一个成员的家族不必成层（没人可共享）；
-    # 层存在时，未挂该层的目标要在自己平台目录里保留同路径副本，那份副本由孪生检查盯着。
-    if len(mappings) > 1:
-        for family in sorted(mappings):
-            built = [n for n in mappings[family] if (ROOT / targets[n]["project"]).is_dir()]
-            declared = [n for n, d in layers.items()
-                        if layer_axes(d) == ["mappings"] and d.get("mappings") == family]
-            if len(built) > 1 and not declared:
-                fail(f"mappings={family} 有 {len(built)} 个在建目标（{', '.join(built)}），"
-                     f"但 layers.json 里没有纯映射层声明 mappings={family} —— "
-                     f"它们本可共用一份，现在只能各存一份没人盯着的手抄副本")
-                continue
-            for layer_name in declared:
-                check_mapping_twins(layer_name, layers[layer_name], targets, family,
-                                    aliases.get(f"layers/mapping/{layer_name}", {}))
+    # 映射层的双向约束已经随映射家族一起撤掉（26.1 起只剩一套官方名），
+    # 相关的 check_mapping_twins / mapping-aliases 检查不再存在。
 
-    # 反方向：某一家族已经有映射层了，同家族的目标就必须挂它 —— 否则它会留一份私藏副本，
-    # 而那份副本与层里的内容本应逐字相同，没有任何东西会告诉你它慢慢不一样了。
-    for name, t in targets.items():
-        for layer_name, d in layers.items():
-            if layer_axes(d) != ["mappings"] or d.get("mappings") != t.get("mappings"):
-                continue
-            if layer_name not in t["layers"]:
-                fail(f"目标 {name} 的 mappings 是 {t.get('mappings')}，映射层 {layer_name} 就是为这个家族准备的，"
-                     f"但它的 layers 里没有这一层 —— 那样它会留一份没人盯着的私藏副本")
-
-    # 矩阵是规则：每个出现过的 Minecraft 版本都要凑齐三个加载器
+    # 矩阵是规则：每个出现过的 Minecraft 版本都要凑齐 loaders.json 里列出的加载器
+    if not loaders:
+        notes.append("versions/loaders.json 的 loaders 是空的 —— 本轮没有校验加载器覆盖度")
     mcs = sorted({mc for mc, _ in seen_combo})
     for mc in mcs:
-        for loader in LOADERS:
+        for loader in loaders:
             if (mc, loader) not in seen_combo:
-                fail(f"Minecraft {mc} 缺 {loader} 条目 —— 新增一个版本 = 加三条；实在不做也要写 "
-                     f"buildable: false 并在 note 里写清为什么，缺了要在这里看得见")
+                fail(f"Minecraft {mc} 缺 {loader} 条目 —— 新增一个版本 = 为每个加载器各加一条；"
+                     f"实在不做也要写 buildable: false 并在 note 里写清为什么，缺了要在这里看得见")
 
     # 工程目录存在就必须在矩阵里
     platforms = ROOT / "platforms"
@@ -245,38 +221,6 @@ def digest(path: pathlib.Path) -> str:
     return hashlib.sha1(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
-def check_mapping_twins(layer_name: str, d: dict, targets: dict, family: str, aliases: dict) -> None:
-    """映射层的代价是「另一个家族保留同路径的孪生副本」。这份副本是手抄的，
-    所以必须有人在盯着：少一个、或者其实逐字相同（那它本该进 shared/）都要红。
-
-    aliases 是路径别名：同一个类在两个家族上住不同包时（比如 Fabric 侧为了包私有
-    访问故意住进原版包），把对应关系写在这里，检查照样跑，找不到一样红 ——
-    别名不是豁免，只是让例外变成可检查的声明。"""
-    base = layer_dir(layer_name, d)
-    if not base.is_dir():
-        return
-    files = [p.relative_to(base).as_posix() for p in base.rglob("*.java")]
-    for rel in sorted(files):
-        if not rel.startswith(("src/main/java/", "src/test/java/")):
-            continue
-        twin_rel = aliases.get(rel, rel)
-        for name, t in targets.items():
-            if t.get("mappings") == family:
-                continue
-            project = ROOT / t["project"]
-            if not project.is_dir():
-                continue  # 还没建起来的目标不欠副本
-            twin = project / twin_rel
-            if not twin.is_file():
-                hint = f"（按别名找的是 {twin_rel}）" if twin_rel != rel else ""
-                fail(f"映射层 {layer_name} 里有 {rel}，但目标 {name}"
-                     f"（mappings={t.get('mappings')}）的平台目录里没有对应的孪生副本{hint} —— "
-                     f"这条路线的代价就是那份平行副本，少了它意味着这个类在那个目标上根本不存在")
-            elif digest(twin) == digest(base / rel):
-                fail(f"{rel} 的孪生副本与映射层里那份【逐字相同】—— 它其实是映射中立的，"
-                     f"应该进 shared/，不必在这里共存两份")
-
-
 def check_pinned_equal(pinned: dict) -> None:
     """钉等清单：同一路径在多个平台各有一份，内容必须逐字相同（行尾无关）。
 
@@ -284,12 +228,21 @@ def check_pinned_equal(pinned: dict) -> None:
     有闸盯着，它们才不会悄悄漂移。哪天消掉一条，就从清单里删掉它。
 
     条目可以是字符串（全部平台互等），也可以是 {"path": ..., "platforms": [...]} ——
-    后者用于 Fabric 有 Yarn 孪生、内容本就不同的文件：只在列出的平台之间要求逐字相同。"""
+    后者用于两端的孪生副本内容本就不同的文件：只在列出的平台之间要求逐字相同。
+
+    【单目标时清单为空是正常的】钉等的意义是「两份手抄要同步」；只剩一个平台时
+    没有任何一对副本可比，所以清单为空是这类仓库的正确状态，不是闸坏掉了。
+    """
     items = pinned.get("pinned", [])
+    all_platforms = sorted(p.name for p in (ROOT / "platforms").iterdir() if p.is_dir()) \
+        if (ROOT / "platforms").is_dir() else []
     if not items:
-        fail("versions/pinned-equal.json 的 pinned 清单是空的 —— 要么这条制度废了，要么布局变了")
+        if len(all_platforms) <= 1:
+            notes.append(f"钉等清单为空，且只有 {len(all_platforms)} 个平台 —— 没有「两份副本」可漂移，符合预期")
+        else:
+            fail("versions/pinned-equal.json 的 pinned 清单是空的，但有 "
+                 f"{len(all_platforms)} 个平台 —— 要么这条制度废了，要么布局变了")
         return
-    all_platforms = sorted(p.name for p in (ROOT / "platforms").iterdir() if p.is_dir())
     for item in items:
         if isinstance(item, str):
             rel, scope = item, None
@@ -594,15 +547,6 @@ def check_shared_dependencies(apis: dict) -> None:
                      f"把它写进 versions/third-party-apis.json（_provided 那一档是原版/加载器提供的）")
 
 
-def check_aliases(aliases: dict) -> None:
-    """别名必须指向真实存在的层内文件 —— 别名的价值在于它可检查，腐坏的别名会静默失效。"""
-    for layer_rel, mapping in aliases.items():
-        for key, value in mapping.items():
-            if not (ROOT / layer_rel / key).is_file():
-                fail(f"versions/mapping-aliases.json 里的 {layer_rel}/{key} 不存在 —— "
-                     f"别名指向了一个没有的文件，这条对应关系已经腐坏")
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--matrix-out", help="把 CI 矩阵写成 JSON 到这个路径")
@@ -610,24 +554,23 @@ def main() -> int:
 
     targets_raw = load_json("versions/targets.json")
     layers_raw = load_json("versions/layers.json")
-    aliases_raw = load_json("versions/mapping-aliases.json")
+    loaders_raw = load_json("versions/loaders.json")
     paths_raw = load_json("versions/resource-paths.json")
     server_raw = load_json("versions/server-side.json")
     pinned_raw = load_json("versions/pinned-equal.json")
     targets = entries_of(targets_raw)
     layers = entries_of(layers_raw)
-    aliases = {k: v for k, v in aliases_raw.items() if not k.startswith("_")}
+    loaders = [x for x in (loaders_raw.get("loaders") or []) if isinstance(x, str)]
 
     check_root_identity()
     check_layers(layers)
-    check_aliases(aliases)
     check_resource_paths(paths_raw)
     check_shared_dependencies(load_json("versions/third-party-apis.json"))
     check_shared_java_level()
     check_server_side(server_raw)
     check_pinned_equal(pinned_raw)
     check_dependency_direction()
-    check_targets(targets, layers, aliases)
+    check_targets(targets, layers, loaders)
 
     # 摘要（CI 日志里看这一份）
     print(f"目标 {len(targets)} 条：")

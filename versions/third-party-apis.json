@@ -8,7 +8,7 @@
   ],
 
   "_provided": [
-    "net.minecraft — 原版类（映射层按官方名；shared/ 只允许两个映射家族同名的极少数，如 client.main.Main）",
+    "net.minecraft — 原版类（26.1 起官方名就是唯一的名字，不再有映射家族之分）",
     "com.mojang — 原版自带（blaze3d / logging / authlib 等）",
     "org.spongepowered — Mixin（加载器提供）",
     "org.slf4j — 日志门面（加载器提供）",
