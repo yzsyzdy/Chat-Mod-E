@@ -4,9 +4,9 @@ import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
 import com.niuqu.chatbubble.render.ChatBubbleTheme;
 import com.niuqu.chatbubble.render.ChatBubbleScreen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class ChatSettingsMenu {
     private static final int W = 100;
@@ -49,10 +49,10 @@ public class ChatSettingsMenu {
         if (clearArmed && now - clearArmedAt >= ARM_MS) clearArmed = false;
     }
 
-    public void render(GuiGraphics g, int mouseX, int mouseY,
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY,
             net.minecraft.client.gui.Font font, ChatBubbleTheme.Colors c,
             int panelX, int panelW, int barTop,
-            java.util.function.Function<String, ResourceLocation> iconTex, float alpha) {
+            java.util.function.Function<String, Identifier> iconTex, float alpha) {
         if (!visible) return;
         int a255 = (int) (255 * alpha);
         int gearX = panelX + 4;
@@ -65,7 +65,7 @@ public class ChatSettingsMenu {
             px, py, W, menuH, alpha);
         g.renderOutline(px, py, W, menuH, ChatBubbleTheme.alphaBlend(c.divider(), a255));
 
-        ResourceLocation[] icons = {
+        Identifier[] icons = {
             iconTex.apply("search"), iconTex.apply("quick_chat"),
             iconTex.apply("theme"), iconTex.apply("settings"), iconTex.apply("trash")
         };

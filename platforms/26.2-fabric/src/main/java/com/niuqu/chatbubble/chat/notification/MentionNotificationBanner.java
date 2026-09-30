@@ -11,12 +11,12 @@ import com.niuqu.chatbubble.render.UiTokens;
 import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
 import java.util.*;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 
 public class MentionNotificationBanner {
@@ -47,9 +47,9 @@ public class MentionNotificationBanner {
     private final List<ActiveBanner> banners = new ArrayList<>();
     private final List<ExitingBanner> exiting = new ArrayList<>();
 
-    private static final Map<UUID, ResourceLocation> skinCache = new LinkedHashMap<>(16, 0.75f, true) {
+    private static final Map<UUID, Identifier> skinCache = new LinkedHashMap<>(16, 0.75f, true) {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<UUID, ResourceLocation> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<UUID, Identifier> eldest) {
             return size() > 256;
         }
     };
@@ -149,7 +149,7 @@ public class MentionNotificationBanner {
         }
     }
 
-    public void render(GuiGraphics g, int screenW, int screenH) {
+    public void render(GuiGraphicsExtractor g, int screenW, int screenH) {
         if (!ChatBubbleClientSetup.config().mentionBannerEnabled()) return;
         if (banners.isEmpty() && exiting.isEmpty()) return;
 
@@ -312,7 +312,7 @@ public class MentionNotificationBanner {
         return 1f;
     }
 
-    private void renderBanner(GuiGraphics g, PendingBanner b, int screenW,
+    private void renderBanner(GuiGraphicsExtractor g, PendingBanner b, int screenW,
                               float y, float scale, float alpha) {
         if (alpha <= 0.003f) return;
         Minecraft mc = Minecraft.getInstance();
@@ -353,7 +353,7 @@ public class MentionNotificationBanner {
         int nameColor, msgColor;
         if (b.hasAvatar) {
             int avatarY = iy + (bannerH - AVATAR_HAT) / 2;
-            ResourceLocation skin = getSkin(b.senderUUID, b.senderName.getString());
+            Identifier skin = getSkin(b.senderUUID, b.senderName.getString());
             drawPlayerHead(g, skin, x + AVATAR_X, avatarY, AVATAR, AVATAR_HAT, alpha);
 
             // Name (prefix already baked into nameSeq in enqueue)
@@ -389,14 +389,14 @@ public class MentionNotificationBanner {
         if (scale != 1f) g.pose().popPose();
     }
 
-    private ResourceLocation getSkin(UUID uuid, String name) {
+    private Identifier getSkin(UUID uuid, String name) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.getConnection() != null && uuid != null && !uuid.equals(NIL_UUID)) {
             var info = mc.getConnection().getPlayerInfo(uuid);
             if (info != null) return info.getSkin().texture();
         }
         if (uuid != null && !uuid.equals(NIL_UUID)) {
-            ResourceLocation cached = skinCache.get(uuid);
+            Identifier cached = skinCache.get(uuid);
             if (cached != null) return cached;
             PlayerSkin skin = mc.getSkinManager().getInsecureSkin(
                 new GameProfile(uuid, name != null ? name : ""));
@@ -408,7 +408,7 @@ public class MentionNotificationBanner {
         return DefaultPlayerSkin.get(uuid != null ? uuid : NIL_UUID).texture();
     }
 
-    private void drawPlayerHead(GuiGraphics g, ResourceLocation skin, int x, int y,
+    private void drawPlayerHead(GuiGraphicsExtractor g, Identifier skin, int x, int y,
                                  int baseSize, int hatSize, float alpha) {
         if (alpha <= 0.003f) return;
         ColoredTextureRenderer.drawWithAlpha(g, skin, x, y, baseSize, baseSize, 8.0F, 8.0F, 8, 8, 64, 64, alpha);

@@ -16,7 +16,7 @@ import java.util.UUID;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MessageSignature;
@@ -30,7 +30,7 @@ public class ChatComponentMixin {
     private long lastRepostTime;
 
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void onRender(GuiGraphics context, int tickDelta, int mouseX, int mouseY,
+    private void onRender(GuiGraphicsExtractor context, int tickDelta, int mouseX, int mouseY,
                           boolean focused, CallbackInfo ci) {
         e33chat$shifted = false;
         if (ChatBubbleClientSetup.config().enabled()) {
@@ -45,7 +45,7 @@ public class ChatComponentMixin {
     }
 
     @Inject(method = "render", at = @At("RETURN"))
-    private void onRenderReturn(GuiGraphics context, int tickDelta, int mouseX, int mouseY,
+    private void onRenderReturn(GuiGraphicsExtractor context, int tickDelta, int mouseX, int mouseY,
                                 boolean focused, CallbackInfo ci) {
         if (e33chat$shifted) {
             context.pose().popPose();

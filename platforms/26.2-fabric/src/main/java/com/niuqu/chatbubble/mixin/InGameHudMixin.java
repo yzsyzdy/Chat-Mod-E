@@ -3,7 +3,7 @@ package com.niuqu.chatbubble.mixin;
 import com.niuqu.chatbubble.render.HudVisibility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class InGameHudMixin {
 
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void e33chat$hideHudForTranslucentScreens(GuiGraphics context, DeltaTracker tickCounter,
+    private void e33chat$hideHudForTranslucentScreens(GuiGraphicsExtractor context, DeltaTracker tickCounter,
                                                       CallbackInfo ci) {
         if (HudVisibility.shouldHideHud()) ci.cancel();
     }

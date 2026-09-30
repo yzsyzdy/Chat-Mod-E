@@ -2,7 +2,7 @@ package com.niuqu.chatbubble.texture;
 
 import com.niuqu.chatbubble.config.ChatBubbleConfig;
 import com.niuqu.chatbubble.render.ChatBubbleTheme;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * UI 纹理管理：仅负责按当前主题拼纹理 ID。
@@ -14,12 +14,12 @@ public final class UiTextureManager {
     private UiTextureManager() {}
 
     /** 当前配置主题下元素的纹理 ID。 */
-    public static ResourceLocation rl(UiElement el) {
+    public static Identifier rl(UiElement el) {
         return el.rl(currentTheme());
     }
 
     /** 指定主题下元素的纹理 ID（配置界面等固定主题场景使用）。*/
-    public static ResourceLocation rl(UiElement el, ChatBubbleTheme theme) {
+    public static Identifier rl(UiElement el, ChatBubbleTheme theme) {
         return el.rl(theme);
     }
 

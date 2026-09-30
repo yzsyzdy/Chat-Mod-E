@@ -1,6 +1,4 @@
 package com.niuqu.chatbubble.network;
-
-import Type;
 import com.niuqu.chatbubble.store.ChatMessageStore;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,14 +6,14 @@ import java.util.UUID;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record ChatMetaPayload(UUID senderUUID, String senderName, String messageHash,
                                String quoteSender, String quoteContent, List<String> mentionTargets)
         implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<ChatMetaPayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "chat_meta"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "chat_meta"));
 
     public static final StreamCodec<FriendlyByteBuf, ChatMetaPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {

@@ -6,9 +6,9 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix4f;
 
 /**
@@ -19,7 +19,7 @@ public final class ColoredTextureRenderer {
 
     private ColoredTextureRenderer() {}
 
-    public static void drawWithAlpha(GuiGraphics g, ResourceLocation tex,
+    public static void drawWithAlpha(GuiGraphicsExtractor g, Identifier tex,
                                      int x, int y, int w, int h, float alpha) {
         if (w <= 0 || h <= 0 || alpha <= 0.003f) return;
         g.flush();
@@ -40,7 +40,7 @@ public final class ColoredTextureRenderer {
     }
 
     /** 带整体 tint 色的纹理渲染：纹理色 × tint(r,g,b,a)。用于白色默认纹理 × 主题色动态着色。 */
-    public static void drawTinted(GuiGraphics g, ResourceLocation tex,
+    public static void drawTinted(GuiGraphicsExtractor g, Identifier tex,
                                   int x, int y, int w, int h, int argb) {
         if (w <= 0 || h <= 0) return;
         float a = (argb >>> 24) / 255f;
@@ -69,7 +69,7 @@ public final class ColoredTextureRenderer {
      * (u,v,regionWidth,regionHeight,textureWidth,textureHeight) 语义，但带动态 alpha。
      * 图标/带采样区域的元素淡入用（drawTexture 走 POSITION_TEXTURE 不吃 setShaderColor）。
      */
-    public static void drawWithAlpha(GuiGraphics g, ResourceLocation tex,
+    public static void drawWithAlpha(GuiGraphicsExtractor g, Identifier tex,
                                      int x, int y, int w, int h,
                                      float u, float v, int regionW, int regionH,
                                      int texW, int texH, float alpha) {

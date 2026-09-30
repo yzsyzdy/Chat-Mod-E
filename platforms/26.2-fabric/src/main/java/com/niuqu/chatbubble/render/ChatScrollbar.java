@@ -1,7 +1,7 @@
 package com.niuqu.chatbubble.render;
 
 import com.niuqu.chatbubble.render.ChatBubbleTheme;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public final class ChatScrollbar {
 
@@ -25,7 +25,7 @@ public final class ChatScrollbar {
     }
 
     public static float alphaTarget(boolean inZone, boolean dragging, long lastScrollTime) {
-        long since = net.minecraft.Util.getMillis() - lastScrollTime; // lastScrollTime 由 Util.getMillis() 赋值，同钟比较
+        long since = net.minecraft.util.Util.getMillis() - lastScrollTime; // lastScrollTime 由 Util.getMillis() 赋值，同钟比较
         return (inZone || dragging || since < FADE_MS) ? 1f : 0f;
     }
 
@@ -42,7 +42,7 @@ public final class ChatScrollbar {
             && mouseY >= msgTop && mouseY < effectiveMsgBottom;
     }
 
-    public static void render(GuiGraphics g, ChatLayout layout, int mouseX, int mouseY,
+    public static void render(GuiGraphicsExtractor g, ChatLayout layout, int mouseX, int mouseY,
                               int maxScroll, int messageTotalH, int scrollOffset,
                               boolean dragging, float alpha,
                               int effectiveMsgBottom, int colorRgb) {

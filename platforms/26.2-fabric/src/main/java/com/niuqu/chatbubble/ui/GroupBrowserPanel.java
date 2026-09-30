@@ -8,7 +8,7 @@ import com.niuqu.chatbubble.texture.UiTextureManager;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 
@@ -55,7 +55,7 @@ public class GroupBrowserPanel {
         return TITLE_H + 4 + rows * (ROW_H + 2) + 4 + INPUT_H + 6;
     }
 
-    public void render(GuiGraphics g, int mouseX, int mouseY, Font font, ChatBubbleTheme.Colors c,
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, Font font, ChatBubbleTheme.Colors c,
                        int panelX, int panelW, int barTop, EditBox createInput, float alpha) {
         if (!visible) return;
         int a255 = (int) (255 * alpha);

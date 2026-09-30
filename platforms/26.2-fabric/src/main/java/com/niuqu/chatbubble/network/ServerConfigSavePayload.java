@@ -2,7 +2,6 @@ package com.niuqu.chatbubble.network;
 
 import com.niuqu.chatbubble.config.ServerConfig;
 import com.niuqu.chatbubble.config.ServerConfigManager;
-import Type;
 import com.niuqu.chatbubble.chat.TemplateMatcher;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +10,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -25,7 +24,7 @@ public record ServerConfigSavePayload(boolean useTpa, boolean historyEnabled, bo
         implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<ServerConfigSavePayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "server_config_save"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "server_config_save"));
 
     public static final StreamCodec<FriendlyByteBuf, ServerConfigSavePayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> ServerConfigDto.encode(new ServerConfigDto(

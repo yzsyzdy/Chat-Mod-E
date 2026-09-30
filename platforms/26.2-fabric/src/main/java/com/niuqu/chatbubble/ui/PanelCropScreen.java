@@ -7,10 +7,10 @@ import com.niuqu.chatbubble.render.PanelBackground;
 import com.niuqu.chatbubble.render.RoundRectRenderer;
 import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 /**
@@ -124,11 +124,11 @@ public class PanelCropScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g, mouseX, mouseY, partialTick);
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
-        ResourceLocation tex = PanelBackground.textureId();
+        Identifier tex = PanelBackground.textureId();
         if (tex != null && dispW > 0) {
             // The whole picture, unscaled by any crop: the point of the editor is
             // to see what is being left out.

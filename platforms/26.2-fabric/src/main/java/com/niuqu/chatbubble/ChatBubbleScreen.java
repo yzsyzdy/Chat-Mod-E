@@ -37,9 +37,9 @@ import com.niuqu.chatbubble.ui.ChatSearchPanel;
 import com.niuqu.chatbubble.ui.ChatSettingsMenu;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -52,7 +52,7 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.text.*;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -101,11 +101,11 @@ public class ChatBubbleScreen extends ChatScreen {
     private static final int INPUT_H = 14;
     private static final int ICON_S = 14;
 
-    public static ResourceLocation iconTex(String name) {
+    public static Identifier iconTex(String name) {
         // Normalize like theme(): a hand-edited invalid value must not 404
         // every icon (UiTextureManager already falls back the same way).
         String theme = "light".equalsIgnoreCase(ChatBubbleClientSetup.config().theme()) ? "light" : "dark";
-        return ResourceLocation.fromNamespaceAndPath("e33chat", "textures/gui/" + theme + "/" + name + ".png");
+        return Identifier.fromNamespaceAndPath("e33chat", "textures/gui/" + theme + "/" + name + ".png");
     }
 
 
@@ -484,7 +484,7 @@ public class ChatBubbleScreen extends ChatScreen {
 
     private static final int SIDEBAR_SEARCH_H = 14;
 
-    private void renderSidebar(GuiGraphics g, int mouseX, int mouseY, float alpha) {
+    private void renderSidebar(GuiGraphicsExtractor g, int mouseX, int mouseY, float alpha) {
         ColoredTextureRenderer.drawWithAlpha(g, UiTextureManager.rl(UiElement.SIDEBAR_BG), 0, 0, SIDEBAR_W, height, alpha);
         ColoredTextureRenderer.drawWithAlpha(g, UiTextureManager.rl(UiElement.DIVIDER), SIDEBAR_W - 1, 0, 1, height, alpha);
 
@@ -568,7 +568,7 @@ public class ChatBubbleScreen extends ChatScreen {
                         else if (hoverRow)
                             ColoredTextureRenderer.drawWithAlpha(g, UiTextureManager.rl(UiElement.SIDEBAR_HOVER), 0, scrollY, SIDEBAR_W, itemH, alpha);
 
-                        ResourceLocation skin = com.niuqu.chatbubble.render.SkinResolver.getSkin(info.getProfile().getId(), info.getProfile().getName());
+                        Identifier skin = com.niuqu.chatbubble.render.SkinResolver.getSkin(info.getProfile().getId(), info.getProfile().getName());
                         drawPlayerHead(g, skin, 4, scrollY + 3, 16, 18, alpha);
 
                         int tipW = ChatMessageStore.hasUnreadWhisper(name) ? 16 : 0;
@@ -705,7 +705,7 @@ public class ChatBubbleScreen extends ChatScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
+    public void renderBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
         // no-op: disable vanilla blur
     }
 
@@ -737,7 +737,7 @@ public class ChatBubbleScreen extends ChatScreen {
     // Popup open/close animation (D07-6: closing is no longer instant).
     // Popup open/close animation (D07-6: closing is no longer instant; 2.4.5:
     // close replays the open curve in reverse). Open 200ms, close 150ms.
-    private void renderPopupWithAnim(GuiGraphics g, long openStartMs, long closeStartMs,
+    private void renderPopupWithAnim(GuiGraphicsExtractor g, long openStartMs, long closeStartMs,
                                      java.util.function.Function<Float, Runnable> renderer) {
         AnimationStyle style = AnimationStyle.parse(ChatBubbleClientSetup.config().popupAnimStyle());
         float alpha;
@@ -1584,7 +1584,7 @@ public class ChatBubbleScreen extends ChatScreen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
         tickSidebarAnimation();
 
         float anim = getAnimProgress();
@@ -1700,7 +1700,7 @@ public class ChatBubbleScreen extends ChatScreen {
         // Notification banner is rendered by ChatBubbleHudOverlay at z=300
     }
 
-    private void renderTitleBar(GuiGraphics g, int mouseX, int mouseY, float panelAlpha) {
+    private void renderTitleBar(GuiGraphicsExtractor g, int mouseX, int mouseY, float panelAlpha) {
         int ty = titleY;
         int a255 = (int) (255 * panelAlpha);
         // Content (icons/text) alpha follows only the open/close animation —
@@ -1772,7 +1772,7 @@ public class ChatBubbleScreen extends ChatScreen {
         return tabs;
     }
 
-    private void renderTabStrip(GuiGraphics g, int mouseX, int mouseY, int tabY) {
+    private void renderTabStrip(GuiGraphicsExtractor g, int mouseX, int mouseY, int tabY) {
         String active = com.niuqu.chatbubble.chat.GroupChannelState.active();
         float alpha = getAnimProgress();
         for (Object[] t : tabLayout()) {
@@ -1820,7 +1820,7 @@ public class ChatBubbleScreen extends ChatScreen {
         if (groupCreateInput != null) groupCreateInput.setVisible(false);
     }
 
-    private void renderMessages(GuiGraphics g, int mouseX, int mouseY) {
+    private void renderMessages(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         msgHeightCache.clear();
         int imgVersion = ImageLoader.version();
         if (imgVersion != lastImageVersion) {
@@ -2023,7 +2023,7 @@ public class ChatBubbleScreen extends ChatScreen {
         g.disableScissor();
     }
 
-    private void renderScrollbar(GuiGraphics g, int mouseX, int mouseY, int effectiveMsgBottom) {
+    private void renderScrollbar(GuiGraphicsExtractor g, int mouseX, int mouseY, int effectiveMsgBottom) {
         if (maxScroll <= 0) return;
         boolean inZone = mouseX >= panelX + panelW - SCROLLBAR_HOVER_ZONE
             && mouseX <= panelX + panelW && mouseY >= msgTop && mouseY < effectiveMsgBottom;
@@ -2057,7 +2057,7 @@ public class ChatBubbleScreen extends ChatScreen {
             ChatBubbleTheme.alphaBlend(c().scrollbar(), (int) (thumbBase * scrollbarAlpha)));
     }
 
-    private void renderTimeSeparator(GuiGraphics g, long timeMillis, int y) {
+    private void renderTimeSeparator(GuiGraphicsExtractor g, long timeMillis, int y) {
         String text = ChatMessageStore.formatTime(timeMillis);
         int tw = font.width(text);
         int tx = UiLayout.centerX(panelX, panelW, tw);
@@ -2308,7 +2308,7 @@ public class ChatBubbleScreen extends ChatScreen {
         return maxW;
     }
 
-    private void renderBubble(GuiGraphics g, ChatMessageStore.ChatMessage msg, int index, int baseY, int mouseX, int mouseY, float alpha, boolean showAvatar) {
+    private void renderBubble(GuiGraphicsExtractor g, ChatMessageStore.ChatMessage msg, int index, int baseY, int mouseX, int mouseY, float alpha, boolean showAvatar) {
         if (msg.isSystem()) {
             List<FormattedCharSequence> lines = wrapContent(msg.content(), panelW - PAD * 2 - 20);
             int yy = baseY + 2;
@@ -2438,7 +2438,7 @@ public class ChatBubbleScreen extends ChatScreen {
 
         String skinName = (msg.rawPlayerName() != null && !msg.rawPlayerName().isEmpty())
             ? msg.rawPlayerName() : msg.senderName().getString();
-        ResourceLocation skin = com.niuqu.chatbubble.render.SkinResolver.getSkin(msg.senderUUID(), skinName);
+        Identifier skin = com.niuqu.chatbubble.render.SkinResolver.getSkin(msg.senderUUID(), skinName);
         // Draw avatar (per-element alpha); D07: hidden on repeated same-sender messages
         if (showAvatar) drawPlayerHead(g, skin, avatarX, avatarY, Appearance.avatarSize(), Appearance.avatarSize() + 2, alpha);
 
@@ -2495,7 +2495,7 @@ public class ChatBubbleScreen extends ChatScreen {
 
     /** Bubble-less image message: name + avatar + optional text + images
      * (320px long-edge, aspect preserved, stacked vertically, direction-aligned). */
-    private void renderNoBubbleMessage(GuiGraphics g, ChatMessageStore.ChatMessage msg, int index, int baseY,
+    private void renderNoBubbleMessage(GuiGraphicsExtractor g, ChatMessageStore.ChatMessage msg, int index, int baseY,
             boolean own, float alpha, BracketCodec.ParseResult parsed, List<FormattedCharSequence> lines, boolean showAvatar) {
         int avatarX = own ? panelX + panelW - PAD - Appearance.avatarSize() : panelX + PAD;
 
@@ -2517,7 +2517,7 @@ public class ChatBubbleScreen extends ChatScreen {
                 index, 0, TextSpan.KIND_NAME, 1f, c().panelBg(), textSelection, false);
         }
 
-        ResourceLocation skin = com.niuqu.chatbubble.render.SkinResolver.getSkin(msg.senderUUID(), msg.rawPlayerName());
+        Identifier skin = com.niuqu.chatbubble.render.SkinResolver.getSkin(msg.senderUUID(), msg.rawPlayerName());
         // 头像顶与名字行顶对齐（2.3.16 曾改内容顶对齐，实测回退老锚点）
         if (showAvatar) drawPlayerHead(g, skin, avatarX, baseY, Appearance.avatarSize(), Appearance.avatarSize() + 2, alpha);
 
@@ -2621,7 +2621,7 @@ public class ChatBubbleScreen extends ChatScreen {
     }
 
     /** QQ-style emote: bubble-less image, max 64px, aligned by direction. */
-    private void renderEmoteMessage(GuiGraphics g, ChatMessageStore.ChatMessage msg, int index, int baseY, boolean own, float alpha, boolean showAvatar) {
+    private void renderEmoteMessage(GuiGraphicsExtractor g, ChatMessageStore.ChatMessage msg, int index, int baseY, boolean own, float alpha, boolean showAvatar) {
         BracketCodec.ParseResult parsed = parseImages(msg);
         if (parsed.images().isEmpty()) return;
         BracketCodec.ImageRef ref = parsed.images().get(0);
@@ -2646,7 +2646,7 @@ public class ChatBubbleScreen extends ChatScreen {
                 index, 0, TextSpan.KIND_NAME, 1f, c().panelBg(), textSelection, false);
         }
 
-        ResourceLocation skin = com.niuqu.chatbubble.render.SkinResolver.getSkin(msg.senderUUID(), msg.rawPlayerName());
+        Identifier skin = com.niuqu.chatbubble.render.SkinResolver.getSkin(msg.senderUUID(), msg.rawPlayerName());
         if (showAvatar) drawPlayerHead(g, skin, avatarX, baseY, Appearance.avatarSize(), Appearance.avatarSize() + 2, alpha);
 
         int emoteY = baseY + (showAvatar ? NAME_H + 2 : 2);
@@ -2693,16 +2693,16 @@ public class ChatBubbleScreen extends ChatScreen {
         }
     }
 
-    private void renderLineWithClicks(GuiGraphics g, FormattedCharSequence line, int x, int y, int color) {
+    private void renderLineWithClicks(GuiGraphicsExtractor g, FormattedCharSequence line, int x, int y, int color) {
         renderLineWithClicks(g, line, x, y, color, null);
     }
 
-    private void renderLineWithClicks(GuiGraphics g, FormattedCharSequence line, int x, int y, int color, Style fallback) {
+    private void renderLineWithClicks(GuiGraphicsExtractor g, FormattedCharSequence line, int x, int y, int color, Style fallback) {
         renderLineWithClicks(g, line, x, y, color, fallback, -1, -1,
             TextSpan.KIND_CONTENT, 1f, 0, null);
     }
 
-    private void renderLineWithClicks(GuiGraphics g, FormattedCharSequence line, int x, int y, int color,
+    private void renderLineWithClicks(GuiGraphicsExtractor g, FormattedCharSequence line, int x, int y, int color,
                                       Style fallback, int messageIndex, int lineIndex,
                                       int kind, float scale, int backgroundRgb,
                                       ChatTextSelection selection) {
@@ -2718,7 +2718,7 @@ public class ChatBubbleScreen extends ChatScreen {
      *                  they showed an underline nobody asked for). Text selection
      *                  still works — that is the reason names go through here.
      */
-    private void renderLineWithClicks(GuiGraphics g, FormattedCharSequence line, int x, int y, int color,
+    private void renderLineWithClicks(GuiGraphicsExtractor g, FormattedCharSequence line, int x, int y, int color,
                                       Style fallback, int messageIndex, int lineIndex,
                                       int kind, float scale, int backgroundRgb,
                                       ChatTextSelection selection, boolean clickable) {
@@ -2859,7 +2859,7 @@ public class ChatBubbleScreen extends ChatScreen {
         return null;
     }
 
-    private void renderNotificationBar(GuiGraphics g, int mouseX, int mouseY) {
+    private void renderNotificationBar(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         if (newMessageCount <= 0) return;
         int notifY = barTop - NOTIF_H;
         ColoredTextureRenderer.drawWithAlpha(g, UiTextureManager.rl(UiElement.DIVIDER), panelX, notifY - 1, panelW, 1, getAnimProgress());
@@ -2884,7 +2884,7 @@ public class ChatBubbleScreen extends ChatScreen {
         }
     }
 
-    private void renderContextMenu(GuiGraphics g, int mouseX, int mouseY) {
+    private void renderContextMenu(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         if (contextMsgIndex < 0) return;
         int menuH = CTX_ITEM_H * 2 + 2;
         int menuX = Math.min(contextX, panelX + panelW - CTX_W - 2);
@@ -2915,7 +2915,7 @@ public class ChatBubbleScreen extends ChatScreen {
         g.drawString(font, Component.translatable("e33chat.context.quote").getString(), menuX + 22, menuY + CTX_ITEM_H + 5, c().textPrimary(), false);
     }
 
-    private void renderAvatarContextMenu(GuiGraphics g, int mouseX, int mouseY) {
+    private void renderAvatarContextMenu(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         if (contextAvatarIndex < 0) return;
         int menuH = CTX_ITEM_H * 4 + 6;
         int menuX = Math.min(contextAvatarX, panelX + panelW - CTX_W - 2);
@@ -2972,7 +2972,7 @@ public class ChatBubbleScreen extends ChatScreen {
 
     private static final int REPLY_BAR_H = 18;
 
-    private void renderReplyBar(GuiGraphics g, int mouseX, int mouseY) {
+    private void renderReplyBar(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         if (replyTargetIndex < 0) return;
         ChatMessageStore.ChatMessage target = ChatMessageStore.getMessageAt(replyTargetIndex);
         if (target == null) { replyTargetIndex = -1; return; }
@@ -3019,7 +3019,7 @@ public class ChatBubbleScreen extends ChatScreen {
         return mx >= cx && mx <= cx + 12 && my >= cy && my <= cy + 12;
     }
 
-    private void renderMentionPopup(GuiGraphics g, int mouseX, int mouseY) {
+    private void renderMentionPopup(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         if (!showMentions || mentionCandidates.isEmpty()) return;
         int maxW = 60;
         for (String name : mentionCandidates) maxW = Math.max(maxW, font.width(name));
@@ -3044,7 +3044,7 @@ public class ChatBubbleScreen extends ChatScreen {
         }
     }
 
-    private void renderToast(GuiGraphics g) {
+    private void renderToast(GuiGraphicsExtractor g) {
         int alpha;
         String text;
         int color;
@@ -3179,7 +3179,7 @@ public class ChatBubbleScreen extends ChatScreen {
         setFocused(input);
     }
 
-    private void renderBottomBar(GuiGraphics g, int mouseX, int mouseY, float panelAlpha) {
+    private void renderBottomBar(GuiGraphicsExtractor g, int mouseX, int mouseY, float panelAlpha) {
         int a255 = (int) (255 * panelAlpha);
         ColoredTextureRenderer.drawWithAlpha(g, UiTextureManager.rl(UiElement.BOTTOM_BAR), panelX, barTop, panelW, height - barTop, panelAlpha);
         ColoredTextureRenderer.drawWithAlpha(g, UiTextureManager.rl(UiElement.DIVIDER), panelX, barTop, panelW, 1, panelAlpha);
@@ -3219,7 +3219,7 @@ public class ChatBubbleScreen extends ChatScreen {
 
 
 
-    static void drawTextureIcon(GuiGraphics g, ResourceLocation tex, int x, int y, int size) {
+    static void drawTextureIcon(GuiGraphicsExtractor g, Identifier tex, int x, int y, int size) {
         // getTexture 无缓存时自动 new ResourceTexture 懒加载（资源包可覆盖，F3+T 即时生效）
         RenderSystem.setShaderTexture(0, tex);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -3234,7 +3234,7 @@ public class ChatBubbleScreen extends ChatScreen {
     }
 
     /** 带透明度图标的绘制：与 drawTextureIcon 同采样语义，但走带 alpha 的渲染路径（弹层淡入用）。 */
-    public static void drawTextureIconAlpha(GuiGraphics g, ResourceLocation tex, int x, int y, int size, float alpha) {
+    public static void drawTextureIconAlpha(GuiGraphicsExtractor g, Identifier tex, int x, int y, int size, float alpha) {
         if (alpha <= 0.003f) return;
         if (size < 16) {
             ColoredTextureRenderer.drawWithAlpha(g, tex, x, y, size, size, 1f, 1f, 14, 14, 16, 16, alpha);
@@ -3243,7 +3243,7 @@ public class ChatBubbleScreen extends ChatScreen {
         }
     }
 
-    private void drawPlayerHead(GuiGraphics g, ResourceLocation skin, int x, int y, int baseSize, int hatSize, float alpha) {
+    private void drawPlayerHead(GuiGraphicsExtractor g, Identifier skin, int x, int y, int baseSize, int hatSize, float alpha) {
         if (alpha <= 0.003f) return;
         ColoredTextureRenderer.drawWithAlpha(g, skin, x, y, baseSize, baseSize, 8.0F, 8.0F, 8, 8, 64, 64, alpha);
         int hatOff = (hatSize - baseSize) / 2;

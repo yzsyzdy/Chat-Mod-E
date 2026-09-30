@@ -2,7 +2,7 @@ package com.niuqu.chatbubble.mixin;
 
 import com.niuqu.chatbubble.ChatBubbleScreen;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.renderer.Rect2i;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ChatInputSuggestorMixin {
 
     @Inject(method = "renderUsage", at = @At("HEAD"), cancellable = true)
-    private void onRenderMessages(GuiGraphics context, CallbackInfo ci) {
+    private void onRenderMessages(GuiGraphicsExtractor context, CallbackInfo ci) {
         if (Minecraft.getInstance().screen instanceof ChatBubbleScreen) {
             ci.cancel();
         }

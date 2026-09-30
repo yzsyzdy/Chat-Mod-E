@@ -1,6 +1,6 @@
 package com.niuqu.chatbubble.ui;
 import com.niuqu.chatbubble.ChatBubbleScreen;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -25,7 +25,7 @@ public class BedScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float delta) {
+    public void renderBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
     }
 
     @Override

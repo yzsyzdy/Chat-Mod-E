@@ -28,7 +28,7 @@ public final class HistoryStore {
     private static final Gson GSON = new Gson();
 
     /** Test seam: headless unit tests stub this to a temp dir so path helpers
-     *  never touch MinecraftClient.getInstance() (which is null in the test JVM). */
+     *  never touch Minecraft.getInstance() (which is null in the test JVM). */
     public static java.util.function.Supplier<java.io.File> gameDirSupplier = null;
 
     private static java.io.File gameDir() {

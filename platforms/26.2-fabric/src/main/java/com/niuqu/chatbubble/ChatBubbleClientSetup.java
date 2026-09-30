@@ -24,7 +24,7 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import java.nio.file.Files;
@@ -116,8 +116,8 @@ public class ChatBubbleClientSetup implements ClientModInitializer {
         });
         // Server-config GUI: opened on the client only (server never loads the Screen)
         ClientPlayNetworking.registerGlobalReceiver(ServerConfigScreenPayload.ID, (payload, context) -> {
-            context.client().execute(() -> MinecraftClient.getInstance().setScreen(new ServerConfigScreen(
-                MinecraftClient.getInstance().currentScreen,
+            context.client().execute(() -> Minecraft.getInstance().setScreen(new ServerConfigScreen(
+                Minecraft.getInstance().currentScreen,
                 payload.useTpa(), payload.historyEnabled(), payload.templateDebug(),
                 payload.mediaEnabled(), payload.mediaAutoClean(), payload.easyBotCompat(),
                 payload.groupsEnabled(),
@@ -201,8 +201,8 @@ public class ChatBubbleClientSetup implements ClientModInitializer {
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
             new SimpleSynchronousResourceReloadListener() {
                 @Override
-                public ResourceLocation getFabricId() {
-                    return ResourceLocation.fromNamespaceAndPath(ChatBubbleMod.MOD_ID, "shader_reload");
+                public Identifier getFabricId() {
+                    return Identifier.fromNamespaceAndPath(ChatBubbleMod.MOD_ID, "shader_reload");
                 }
                 @Override
                 public void reload(ResourceManager manager) {

@@ -382,7 +382,7 @@ public class ChatMessageStore {
     }
 
     // package-private test seam: headless unit tests stub this to return null
-    // so addMessage never touches MinecraftClient.getInstance()
+    // so addMessage never touches Minecraft.getInstance()
     public static java.util.function.Supplier<net.minecraft.world.entity.player.Player> localPlayerSupplier =
         () -> net.minecraft.client.Minecraft.getInstance().player;
 
@@ -1059,7 +1059,7 @@ public class ChatMessageStore {
         if (legacy.exists()) legacy.delete();
 
         // Ordered safety-net delete (see javadoc). File handles are captured on the
-        // client thread — MinecraftClient.getInstance() must not be touched off-thread.
+        // client thread — Minecraft.getInstance() must not be touched off-thread.
         final long gen = historyGeneration;
         final File cur = f;
         final File leg = legacy;

@@ -1,7 +1,7 @@
 package com.niuqu.chatbubble.texture;
 
 import com.niuqu.chatbubble.render.ChatBubbleTheme;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** UI 纹理元素：资源包路径。路径约定 assets/e33chat/textures/gui/{theme}/{path}.png，默认纹理为 jar 内置 16×16 PNG。 */
 public enum UiElement {
@@ -37,8 +37,8 @@ public enum UiElement {
     }
 
     /** 渲染/注册用的纹理 ID（带 .png——ResourceTexture 原样查资源，不自动补后缀）。 */
-    public ResourceLocation rl(ChatBubbleTheme theme) {
-        return ResourceLocation.fromNamespaceAndPath("e33chat",
+    public Identifier rl(ChatBubbleTheme theme) {
+        return Identifier.fromNamespaceAndPath("e33chat",
             "textures/gui/" + theme.name().toLowerCase() + "/" + path + ".png");
     }
 }

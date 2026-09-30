@@ -7,11 +7,11 @@ import com.niuqu.chatbubble.render.SkinResolver;
 import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.GameType;
 
 /**
@@ -60,7 +60,7 @@ public class PlayerProfileScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g, mouseX, mouseY, partialTick);
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
@@ -80,7 +80,7 @@ public class PlayerProfileScreen extends Screen {
         int headS = 40;
         int headX = panelX + (PANEL_W - headS) / 2;
         int headY = panelY + 14;
-        ResourceLocation skin = SkinResolver.getSkin(uuid, playerName);
+        Identifier skin = SkinResolver.getSkin(uuid, playerName);
         ColoredTextureRenderer.drawWithAlpha(g, skin,
             headX, headY, headS, headS, 8.0F, 8.0F, 8, 8, 64, 64, 1f);
         ColoredTextureRenderer.drawWithAlpha(g, skin,
@@ -124,7 +124,7 @@ public class PlayerProfileScreen extends Screen {
             btnCopyX + (btnW - font.width(copyLabel)) / 2, btnY + 4, 0xFFFFFFFF, false);
     }
 
-    private int drawField(GuiGraphics g, String label, String value, int x, int y, int lineH,
+    private int drawField(GuiGraphicsExtractor g, String label, String value, int x, int y, int lineH,
                           ChatBubbleTheme.Colors c) {
         g.drawString(font, label, x, y, c.textSecondary(), false);
         String v = value;

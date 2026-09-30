@@ -28,7 +28,10 @@ dependencies {
     // 的 jar 直接就是可读名，不需要 Loom 的 remap 步骤；官方 26.2 模板同样用 implementation。
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-    modCompileOnly "com.terraformersmc:modmenu:11.0.3"
+    // ModMenu 只有集成类 import 它，且是客户端可选依赖：compileOnly 即可。
+    // 【为什么不是 modCompileOnly】26.2 没有映射要 remap，Loom 1.18 也去掉了这一族
+    // mod* 配置 —— jar 本来就是可读名，直接用 compileOnly。
+    compileOnly "com.terraformersmc:modmenu:20.0.3"
     // WebP emote decoding via TwelveMonkeys ImageIO (picked up by RasterImageDecoder)
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -78,7 +81,9 @@ modrinth {
     projectId = (project.findProperty('modrinth_project_id') ?: '').toString()
     versionNumber = storeVersion
     versionType = "release"
-    uploadFile = remapJar
+    // 【为什么不再有 uploadFile = remapJar】26.2 没有映射，jar 出来就是最终产物，
+    // Loom 1.18 也就不再生成 remapJar 任务。minotaur 不写 uploadFile 时默认取
+    // 「无 classifier 的那个 jar」，正是我们要发的那个。
     gameVersions = [project.minecraft_version]
     loaders = ["fabric"]
     changelog = changelogFor(project.version)
@@ -101,7 +106,8 @@ tasks.register('curseforge', net.darkhax.curseforgegradle.TaskPublishCurseForge)
     onlyIf { cfConfigured && System.getenv("CURSEFORGE_TOKEN") }
 
     if (cfConfigured) {
-        def main = upload(cfProjectId as int, remapJar)
+        // 同样不再有 remapJar：直接传 jar 任务（26.2 无映射，它就是成品）。
+        def main = upload(cfProjectId as int, tasks.named('jar').get())
         main.changelogType = 'markdown'
         main.changelog = changelogFor(project.version)
         main.releaseType = 'release'

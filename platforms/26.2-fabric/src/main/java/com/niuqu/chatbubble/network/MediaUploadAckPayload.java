@@ -1,10 +1,8 @@
 package com.niuqu.chatbubble.network;
-
-import Type;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Server -> client: result of a media upload. mediaId is a 32-hex UUID when
@@ -15,7 +13,7 @@ public record MediaUploadAckPayload(long uploadId, String mediaId, String error)
         implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<MediaUploadAckPayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "media_upload_ack"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "media_upload_ack"));
 
     public static final StreamCodec<FriendlyByteBuf, MediaUploadAckPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {

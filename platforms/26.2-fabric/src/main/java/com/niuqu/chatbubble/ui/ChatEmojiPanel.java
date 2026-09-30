@@ -1,7 +1,7 @@
 package com.niuqu.chatbubble.ui;
 import com.niuqu.chatbubble.texture.UiTextureManager;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
@@ -110,7 +110,7 @@ public class ChatEmojiPanel {
         else visible = false;
     }
 
-    public void render(GuiGraphics g, int mouseX, int mouseY,
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY,
             Font font, ChatBubbleTheme.Colors c,
             int panelX, int panelW, int barTop, int iconS, int pad, float alpha) {
         if (!visible) return;
@@ -165,7 +165,7 @@ public class ChatEmojiPanel {
         }
     }
 
-    private void renderEmoteGrid(GuiGraphics g, int mouseX, int mouseY,
+    private void renderEmoteGrid(GuiGraphicsExtractor g, int mouseX, int mouseY,
             Font font, ChatBubbleTheme.Colors c,
             int px, int cy, int pw, int ch, float alpha) {
         int a255 = (int) (255 * alpha);
@@ -199,7 +199,7 @@ public class ChatEmojiPanel {
                 // and GPU memory for something nobody is looking at. Sending the
                 // emote still animates in the message, where the frame is big
                 // enough to matter.
-                net.minecraft.resources.ResourceLocation tex = EmoteStore.texture(f);
+                net.minecraft.resources.Identifier tex = EmoteStore.texture(f);
                 if (tex != null)
                     com.niuqu.chatbubble.texture.ColoredTextureRenderer.drawWithAlpha(g, tex,
                         ex + 4, ey + 4, EMOTE_SLOT - 8, EMOTE_SLOT - 8, alpha);
@@ -230,7 +230,7 @@ public class ChatEmojiPanel {
         g.disableScissor();
     }
 
-    private void renderEmojiGrid(GuiGraphics g, int mouseX, int mouseY,
+    private void renderEmojiGrid(GuiGraphicsExtractor g, int mouseX, int mouseY,
             Font font, ChatBubbleTheme.Colors c,
             int px, int cy, int pw, int ch, int cols, float alpha) {
         int a255 = (int) (255 * alpha);
@@ -260,7 +260,7 @@ public class ChatEmojiPanel {
         g.disableScissor();
     }
 
-    private void renderKaomojiList(GuiGraphics g, int mouseX, int mouseY,
+    private void renderKaomojiList(GuiGraphicsExtractor g, int mouseX, int mouseY,
             Font font, ChatBubbleTheme.Colors c,
             int px, int cy, int pw, int ch, float alpha) {
         int a255 = (int) (255 * alpha);

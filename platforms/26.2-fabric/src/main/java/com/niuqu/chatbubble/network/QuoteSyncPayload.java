@@ -1,16 +1,14 @@
 package com.niuqu.chatbubble.network;
-
-import Type;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record QuoteSyncPayload(String quotedSenderName, String quotedContent, String messageHash)
         implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<QuoteSyncPayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "quote_sync"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "quote_sync"));
 
     public static final StreamCodec<FriendlyByteBuf, QuoteSyncPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {

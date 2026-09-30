@@ -1,13 +1,11 @@
 package com.niuqu.chatbubble.network;
-
-import Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record HistoryPayload(List<HistoryPayload.HistoryEntry> entries)
         implements CustomPacketPayload {
@@ -16,7 +14,7 @@ public record HistoryPayload(List<HistoryPayload.HistoryEntry> entries)
     private static final UUID NULL_UUID = new UUID(0, 0);
 
     public static final CustomPacketPayload.Type<HistoryPayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "chat_history"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "chat_history"));
 
     public record HistoryEntry(
         UUID senderUUID,

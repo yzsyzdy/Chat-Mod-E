@@ -11,7 +11,7 @@ import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -276,13 +276,13 @@ public final class AnimatedImageLoader {
     /** Free one entry's per-frame GPU textures; safe from any thread (the
      *  release itself is marshalled to the render thread). */
     private static void releaseTextures(Entry entry) {
-        ResourceLocation[] ids = entry.frames;
+        Identifier[] ids = entry.frames;
         entry.frames = null;
         entry.ready = false;
         if (ids == null || ids.length == 0) return;
         Minecraft.getInstance().execute(() -> {
             var textureManager = Minecraft.getInstance().getTextureManager();
-            for (ResourceLocation id : ids) textureManager.release(id);
+            for (Identifier id : ids) textureManager.release(id);
         });
     }
 
@@ -343,9 +343,9 @@ public final class AnimatedImageLoader {
                     return;
                 }
                 try {
-                    ResourceLocation[] ids = new ResourceLocation[decoded.frames().size()];
+                    Identifier[] ids = new Identifier[decoded.frames().size()];
                     for (int i = 0; i < decoded.frames().size(); i++) {
-                        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("e33chat",
+                        Identifier id = Identifier.fromNamespaceAndPath("e33chat",
                         "anim/" + Integer.toHexString(entry.url.hashCode()) + "_" + i);
                         Minecraft.getInstance().getTextureManager().register(
                             id, new DynamicTexture(decoded.frames().get(i)));
@@ -597,7 +597,7 @@ public final class AnimatedImageLoader {
 
     public static final class Entry {
         private final String url;
-        private volatile ResourceLocation[] frames;
+        private volatile Identifier[] frames;
         private volatile int[] delays;
         private volatile int width;
         private volatile int height;
@@ -640,20 +640,20 @@ public final class AnimatedImageLoader {
         }
 
         private int frameCount() {
-            ResourceLocation[] current = frames;
+            Identifier[] current = frames;
             return current == null ? 0 : current.length;
         }
 
         /** Current frame texture; wall-clock fallback keeps GIFs alive without ticks. */
-        public ResourceLocation texture() {
-            ResourceLocation[] current = frames;
+        public Identifier texture() {
+            Identifier[] current = frames;
             if (current == null || current.length == 0) return null;
             advance(System.currentTimeMillis());
             return current[Math.max(0, Math.min(frameIndex, current.length - 1))];
         }
 
         private synchronized void advance(long now) {
-            ResourceLocation[] current = frames;
+            Identifier[] current = frames;
             int[] currentDelays = delays;
             if (!ready || current == null || current.length == 0
                 || currentDelays == null || currentDelays.length != current.length) return;
@@ -674,7 +674,7 @@ public final class AnimatedImageLoader {
     private record Decoded(ArrayList<NativeImage> frames, int[] delays, int width, int height) {}
 
     /** Draw snapshot: current frame texture + logical canvas size. */
-    public record FrameTex(ResourceLocation texture, int width, int height) {}
+    public record FrameTex(Identifier texture, int width, int height) {}
 
     private record FrameInfo(int left, int top, int width, int height, int delay, int disposal) {}
 }

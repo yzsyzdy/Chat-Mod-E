@@ -15,7 +15,7 @@ import net.minecraft.client.gui.screens.InBedChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 
 @Mixin(Minecraft.class)
-public class MinecraftClientMixin {
+public class MinecraftMixin {
 
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void onSetScreen(Screen screen, CallbackInfo ci) {

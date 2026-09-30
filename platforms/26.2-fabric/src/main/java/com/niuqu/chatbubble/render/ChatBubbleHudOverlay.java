@@ -12,8 +12,8 @@ import com.niuqu.chatbubble.chat.notification.MentionNotificationBanner;
 import com.niuqu.chatbubble.config.ChatBubbleConfig;
 import java.util.List;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 
 public class ChatBubbleHudOverlay {
 
@@ -25,9 +25,9 @@ public class ChatBubbleHudOverlay {
 
     private static ChatBubbleConfig cfg() { return ChatBubbleClientSetup.config(); }
 
-    private static ResourceLocation chatIconTex() {
+    private static Identifier chatIconTex() {
         String theme = cfg().theme().toLowerCase();
-        return ResourceLocation.fromNamespaceAndPath("e33chat", "textures/gui/" + theme + "/chat_icon.png");
+        return Identifier.fromNamespaceAndPath("e33chat", "textures/gui/" + theme + "/chat_icon.png");
     }
 
     private static ChatBubbleTheme theme() {
@@ -36,7 +36,7 @@ public class ChatBubbleHudOverlay {
 
     private static ChatBubbleTheme.Colors c() { return Appearance.snapshot(); }
 
-    public static void render(GuiGraphics g) {
+    public static void render(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options == null) return;
         // F1 hides through vanilla hudHidden (InGameHud is skipped entirely).
@@ -83,7 +83,7 @@ public class ChatBubbleHudOverlay {
 
     // Fabric's HUD layer draws behind the screen batch; screens that render over
     // it re-invoke this so the banner stays visible on top
-    public static void renderBannerForScreen(GuiGraphics g) {
+    public static void renderBannerForScreen(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options == null) return;
         if (mc.gui.getDebugOverlay().showDebugScreen()) return;
@@ -104,13 +104,13 @@ public class ChatBubbleHudOverlay {
     }
 
 
-    private static void drawIcon(GuiGraphics g, int x, int y) {
+    private static void drawIcon(GuiGraphicsExtractor g, int x, int y) {
         // getTexture 无缓存时自动 new ResourceTexture 懒加载（资源包可覆盖，F3+T 即时生效）
         g.blit(chatIconTex(), x, y, 0.0F, 0.0F, ICON_S, ICON_S, ICON_S, ICON_S);
     }
 
-    private static void drawScaledTip(GuiGraphics g, int x, int y, int disp) {
-        ResourceLocation tex = ChatBubbleScreen.iconTex("private_tip");
+    private static void drawScaledTip(GuiGraphicsExtractor g, int x, int y, int disp) {
+        Identifier tex = ChatBubbleScreen.iconTex("private_tip");
         g.blit(tex, x, y, disp, disp, (float) SRC_U, (float) SRC_V, SRC_S, SRC_S, 16, 16);
     }
 }

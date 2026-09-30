@@ -29,7 +29,7 @@ public class SmoothScrollPane {
     public void animateTo(float target, int max, int dur) {
         animFrom = offset;
         animTo = Mth.clamp(target, 0, max);
-        animStart = net.minecraft.Util.getMillis();
+        animStart = net.minecraft.util.Util.getMillis();
         animDur = dur;
         animOn = true;
     }

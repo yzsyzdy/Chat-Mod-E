@@ -1,10 +1,8 @@
 package com.niuqu.chatbubble.network;
-
-import Type;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Client -> server: one chunk of a media upload (2.3.13 server-side media
@@ -16,7 +14,7 @@ public record MediaUploadPayload(long uploadId, int index, int totalChunks,
         implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<MediaUploadPayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "media_upload"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "media_upload"));
 
     public static final StreamCodec<FriendlyByteBuf, MediaUploadPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {

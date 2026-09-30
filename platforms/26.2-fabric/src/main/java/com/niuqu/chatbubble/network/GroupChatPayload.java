@@ -4,7 +4,7 @@ import java.util.UUID;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * S2C group chat message, sent only to members running the mod (vanilla
@@ -19,7 +19,7 @@ public record GroupChatPayload(UUID senderUUID, String senderName, String groupN
     private static final int MAX_TEXT = 2048;
 
     public static final CustomPacketPayload.Type<GroupChatPayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "group_chat"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "group_chat"));
 
     public static final StreamCodec<FriendlyByteBuf, GroupChatPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {

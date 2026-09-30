@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 
 /**
@@ -97,7 +97,7 @@ public final class ImageLoader {
             Minecraft.getInstance().execute(() -> {
                 TextureManager tm = Minecraft.getInstance().getTextureManager();
                 for (String u : CACHE.keySet()) {
-                    tm.release(ResourceLocation.fromNamespaceAndPath("e33chat", "img/" + hash(u)));
+                    tm.release(Identifier.fromNamespaceAndPath("e33chat", "img/" + hash(u)));
                 }
                 CACHE.clear();
                 LRU.clear();
@@ -148,7 +148,7 @@ public final class ImageLoader {
                 it.remove();
                 CACHE.remove(url, e);
                 if (e.state() == ImageEntry.State.LOADED && e.textureId() != null) {
-                    ResourceLocation id = e.textureId();
+                    Identifier id = e.textureId();
                     Minecraft.getInstance().execute(() -> {
                         Minecraft.getInstance().getTextureManager().release(id);
                     });
@@ -330,7 +330,7 @@ public final class ImageLoader {
                 // Re-register unconditionally (destroy first to avoid leaking the
                 // previous NativeImageBackedTexture on cache eviction + reload).
                 try {
-                    ResourceLocation id = ResourceLocation.fromNamespaceAndPath("e33chat", "img/" + hash(url));
+                    Identifier id = Identifier.fromNamespaceAndPath("e33chat", "img/" + hash(url));
                     TextureManager tm = Minecraft.getInstance().getTextureManager();
                     tm.release(id);
                     tm.register(id, new net.minecraft.client.renderer.texture.DynamicTexture(uploadImage.image()));

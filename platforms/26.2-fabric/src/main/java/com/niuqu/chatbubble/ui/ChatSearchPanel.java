@@ -4,7 +4,7 @@ import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
 import com.niuqu.chatbubble.render.ChatBubbleTheme;
 import com.niuqu.chatbubble.texture.UiElement;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 public class ChatSearchPanel {
@@ -28,7 +28,7 @@ public class ChatSearchPanel {
         return Math.max(100, Math.min(PANEL_W, panelWidth - 4));
     }
 
-    public void render(GuiGraphics g, int mouseX, int mouseY,
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY,
             net.minecraft.client.gui.Font font, ChatBubbleTheme.Colors c,
             int panelX, int panelW, int barTop,
             net.minecraft.client.gui.components.EditBox searchInput,

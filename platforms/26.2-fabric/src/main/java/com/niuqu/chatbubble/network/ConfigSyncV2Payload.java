@@ -1,13 +1,11 @@
 package com.niuqu.chatbubble.network;
-
-import Type;
 import com.niuqu.chatbubble.store.ChatMessageStore;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** Server -> client sync of server-side settings (v2: adds message-format templates). */
 public record ConfigSyncV2Payload(boolean useTpa, List<String> chatTemplates,
@@ -15,7 +13,7 @@ public record ConfigSyncV2Payload(boolean useTpa, List<String> chatTemplates,
         implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<ConfigSyncV2Payload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "config_sync_v2"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "config_sync_v2"));
 
     public static final StreamCodec<FriendlyByteBuf, ConfigSyncV2Payload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {

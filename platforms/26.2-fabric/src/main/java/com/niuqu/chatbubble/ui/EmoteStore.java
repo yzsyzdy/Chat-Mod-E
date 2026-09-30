@@ -4,7 +4,7 @@ import com.niuqu.chatbubble.image.RasterImageDecoder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -24,7 +24,7 @@ public final class EmoteStore {
     private static final Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     public static final int EMOTE_MAX = 32;
     private static final List<File> emotes = new ArrayList<>();
-    private static final Map<File, ResourceLocation> textures = new HashMap<>();
+    private static final Map<File, Identifier> textures = new HashMap<>();
     private static int textureSeq;
     private static boolean scanned;
 
@@ -115,8 +115,8 @@ public final class EmoteStore {
     /** Lazily loads the file into a registered texture; null when it fails.
      * Decoding goes through RasterImageDecoder (PNG fast path + ImageIO
      * fallback for jpg/gif). */
-    public static ResourceLocation texture(File f) {
-        ResourceLocation id = textures.get(f);
+    public static Identifier texture(File f) {
+        Identifier id = textures.get(f);
         if (id != null) return id;
         try {
             RasterImageDecoder.DecodedImage dec =
@@ -128,7 +128,7 @@ public final class EmoteStore {
             // NativeImage ownership transfers to the texture; never close it here.
             // Monotonic id: textures.size() reuses ids after removals, which
             // makes registerDynamicTexture return a stale texture for the new file.
-            ResourceLocation tex = Minecraft.getInstance().getTextureManager()
+            Identifier tex = Minecraft.getInstance().getTextureManager()
                 .register("e33chat_emote_" + (textureSeq++),
                     new DynamicTexture(dec.image()));
             textures.put(f, tex);

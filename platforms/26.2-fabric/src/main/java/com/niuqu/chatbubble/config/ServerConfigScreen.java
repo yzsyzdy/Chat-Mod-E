@@ -9,7 +9,7 @@ import com.niuqu.chatbubble.texture.UiElement;
 import com.niuqu.chatbubble.texture.UiTextureManager;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -546,7 +546,7 @@ public class ServerConfigScreen extends Screen {
         relayoutWidgets();
     }
 
-    private void drawBar(GuiGraphics g, int trackX, int top, int bot,
+    private void drawBar(GuiGraphicsExtractor g, int trackX, int top, int bot,
                          int totalH, int offset, int maxScroll,
                          double mx, double my, boolean dragging) {
         if (maxScroll <= 0) return;
@@ -563,7 +563,7 @@ public class ServerConfigScreen extends Screen {
             trackX, ty, SCROLLBAR_W, th, base / 255f);
     }
 
-    private void drawTriangle(GuiGraphics g, int x, int y, boolean down, int color) {
+    private void drawTriangle(GuiGraphicsExtractor g, int x, int y, boolean down, int color) {
         if (down) {
             g.fill(x, y, x + 5, y + 1, color);
             g.fill(x + 1, y + 1, x + 4, y + 2, color);
@@ -649,7 +649,7 @@ public class ServerConfigScreen extends Screen {
     // ===== 渲染 =====
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         g.blit(UiTextureManager.rl(UiElement.CONFIG_BG, ChatBubbleTheme.DARK),
             0, 0, width, height, 0f, 0f, 16, 16, 16, 16);
         tickAnims();
@@ -748,7 +748,7 @@ public class ServerConfigScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    public void renderBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         // no-op：背景已在 render() 开头画一次（同客户端）
     }
 

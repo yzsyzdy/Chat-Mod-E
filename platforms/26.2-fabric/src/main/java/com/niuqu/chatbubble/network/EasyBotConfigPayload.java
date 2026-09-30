@@ -1,11 +1,9 @@
 package com.niuqu.chatbubble.network;
-
-import Type;
 import com.niuqu.chatbubble.store.ChatMessageStore;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Server -> client: EasyBot compatibility toggle (2.4.3-beta).
@@ -17,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 public record EasyBotConfigPayload(boolean easyBotCompat) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<EasyBotConfigPayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "config_sync_easybot"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "config_sync_easybot"));
 
     public static final StreamCodec<FriendlyByteBuf, EasyBotConfigPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> buf.writeBoolean(value.easyBotCompat),

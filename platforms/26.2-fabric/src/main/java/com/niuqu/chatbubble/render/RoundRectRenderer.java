@@ -8,7 +8,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.render.*;
 import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix4f;
@@ -40,7 +40,7 @@ public class RoundRectRenderer {
         shader = null;
     }
 
-    public static void fill(GuiGraphics g, int x1, int y1, int x2, int y2, float radius, int argb) {
+    public static void fill(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, float radius, int argb) {
         ShaderInstance sh = getShader();
         radius = Math.min(radius, Math.min(x2 - x1, y2 - y1) / 2f);
         if (sh == null || radius <= 0) {

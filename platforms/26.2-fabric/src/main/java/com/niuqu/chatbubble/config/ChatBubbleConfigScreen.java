@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -277,7 +277,7 @@ public class ChatBubbleConfigScreen extends Screen {
         relayoutWidgets();
     }
 
-    private void drawBar(GuiGraphics g, int trackX, int top, int bot,
+    private void drawBar(GuiGraphicsExtractor g, int trackX, int top, int bot,
                          int totalH, int offset, int maxScroll,
                          double mx, double my, boolean dragging) {
         if (maxScroll <= 0) return;
@@ -858,7 +858,7 @@ public class ChatBubbleConfigScreen extends Screen {
     // ---- rendering ----
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         // CONFIG_BG 烘焙为 75% 不透明（0xC0 alpha），drawTexture 无 alpha 顶点会丢 alpha 画成
         // 不透明灰块——走带 alpha 顶点的绘制恢复半透明，世界能透出来
         com.niuqu.chatbubble.texture.ColoredTextureRenderer.drawWithAlpha(g,
@@ -962,7 +962,7 @@ public class ChatBubbleConfigScreen extends Screen {
                 DefaultTooltipPositioner.INSTANCE, mouseX, mouseY);
     }
 
-    private void drawBubblePreview(GuiGraphics g) {
+    private void drawBubblePreview(GuiGraphicsExtractor g) {
         int top = START_Y;
         int other = ChatBubbleConfig.parseHexColor(otherBubbleColor, 0xFF4A4A4A);
         int own = ChatBubbleConfig.parseHexColor(ownBubbleColor, ACCENT);
@@ -983,13 +983,13 @@ public class ChatBubbleConfigScreen extends Screen {
             optLabelX - 4, top + PREVIEW_H - 1, optAreaW() + 8, 1, 0f, 0f, 16, 16, 16, 16);
     }
 
-    private void drawPreview(GuiGraphics g, int y, String hex) {
+    private void drawPreview(GuiGraphicsExtractor g, int y, String hex) {
         int color = ChatBubbleConfig.parseHexColor(hex, 0xFF000000);
         g.fill(previewX, y, previewX + 14, y + 14, c().iconHover());
         g.fill(previewX + 1, y + 1, previewX + 13, y + 13, color);
     }
 
-    private void drawTriangle(GuiGraphics g, int x, int y, boolean down, int color) {
+    private void drawTriangle(GuiGraphicsExtractor g, int x, int y, boolean down, int color) {
         if (down) {
             g.fill(x, y, x + 5, y + 1, color);
             g.fill(x + 1, y + 1, x + 4, y + 2, color);
@@ -1004,7 +1004,7 @@ public class ChatBubbleConfigScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    public void renderBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         // no-op：背景已在 render() 开头画，避免 1.21.1 batch 缓冲叠暗文字
     }
 

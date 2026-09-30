@@ -3,7 +3,7 @@ package com.niuqu.chatbubble.network;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -14,7 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 public record ClientHelloPayload() implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<ClientHelloPayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "client_hello"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "client_hello"));
 
     public static final StreamCodec<FriendlyByteBuf, ClientHelloPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {},

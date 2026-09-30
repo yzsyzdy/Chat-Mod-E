@@ -6,7 +6,7 @@ import com.niuqu.chatbubble.ChatBubbleClientSetup;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -26,7 +26,7 @@ import java.nio.file.Path;
 public final class PanelBackground {
 
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("e33chat", "panel_bg_custom");
+    private static final Identifier ID = Identifier.fromNamespaceAndPath("e33chat", "panel_bg_custom");
 
     private static final Object LOCK = new Object();
     private static String loadedKey = null;
@@ -243,7 +243,7 @@ public final class PanelBackground {
     public static int imageHeight() { return texH; }
 
     /** Texture of the loaded picture, or null when nothing is loaded. */
-    public static ResourceLocation textureId() { return available() ? ID : null; }
+    public static Identifier textureId() { return available() ? ID : null; }
 
     /**
      * Aspect ratio (w/h) the panel was last drawn at. The crop editor frames the
@@ -259,7 +259,7 @@ public final class PanelBackground {
      * Draw the custom image over the given rect using the configured framing.
      * Never upsets blend state (the shared colored-texture path restores it).
      */
-    public static void draw(net.minecraft.client.gui.GuiGraphics g,
+    public static void draw(net.minecraft.client.gui.GuiGraphicsExtractor g,
                             int x, int y, int w, int h, float alpha) {
         if (w > 0 && h > 0) lastAspect = (float) w / h;
         if (!available() || w <= 0 || h <= 0 || alpha <= 0.003f) return;

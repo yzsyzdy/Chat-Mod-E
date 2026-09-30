@@ -4,7 +4,7 @@ import java.util.List;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * S2C group directory sync: pushed on hello, login and after every group
@@ -20,7 +20,7 @@ public record GroupListPayload(boolean enabled, List<String> names,
     private static final int MAX_GROUPS = 200;
 
     public static final CustomPacketPayload.Type<GroupListPayload> ID =
-        new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("e33chat", "group_list"));
+        new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("e33chat", "group_list"));
 
     public static final StreamCodec<FriendlyByteBuf, GroupListPayload> CODEC = StreamCodec.ofMember(
         (value, buf) -> {
