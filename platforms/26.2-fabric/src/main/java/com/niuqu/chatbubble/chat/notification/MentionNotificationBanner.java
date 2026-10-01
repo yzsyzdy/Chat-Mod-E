@@ -13,7 +13,7 @@ import java.util.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
@@ -329,10 +329,11 @@ public class MentionNotificationBanner {
         int iy = (int) y;
 
         if (scale != 1f) {
-            g.pose().pushPose();
-            g.pose().translate(x + bannerW / 2f, y + bannerH / 2f, 0);
-            g.pose().scale(scale, scale, 1f);
-            g.pose().translate(-(x + bannerW / 2f), -(y + bannerH / 2f), 0);
+            // 26.2：pose 是 2D 的 Matrix3x2fStack，translate/scale 只接受两个分量（没有 z）。
+            g.pose().pushMatrix();
+            g.pose().translate(x + bannerW / 2f, y + bannerH / 2f);
+            g.pose().scale(scale, scale);
+            g.pose().translate(-(x + bannerW / 2f), -(y + bannerH / 2f));
         }
 
         int shadowAlpha = (int) (UiTokens.SHADOW_ALPHA_PANEL * bgAlphaMul);
@@ -360,14 +361,14 @@ public class MentionNotificationBanner {
             int nameY = iy + 6;
             int nameAlpha = (int) ((theme.textPrimary() >>> 24) * alpha);
             nameColor = (nameAlpha << 24) | (theme.textPrimary() & 0x00FFFFFF);
-            g.drawString(mc.font, b.nameSeq, textX, nameY, nameColor, false);
+            g.text(mc.font, b.nameSeq, textX, nameY, nameColor, false);
 
             // Message lines
             int msgAlpha = (int) ((theme.textSecondary() >>> 24) * alpha);
             msgColor = (msgAlpha << 24) | (theme.textSecondary() & 0x00FFFFFF);
             int msgY = nameY + mc.font.lineHeight + 2;
             for (int i = 0; i < drawLines.size(); i++)
-                g.drawString(mc.font, drawLines.get(i), textX,
+                g.text(mc.font, drawLines.get(i), textX,
                     msgY + i * mc.font.lineHeight, msgColor, false);
         } else {
             // Plain-text banner: [系统] label + content vertically centered, single row
@@ -378,34 +379,37 @@ public class MentionNotificationBanner {
             int lineH = mc.font.lineHeight;
             int totalH = lineH * drawLines.size();
             int textY = iy + (bannerH - totalH) / 2;
-            g.drawString(mc.font, b.nameSeq, textX, textY, nameColor, false);
+            g.text(mc.font, b.nameSeq, textX, textY, nameColor, false);
             int contentX = textX + mc.font.width(b.nameSeq);
-            g.drawString(mc.font, drawLines.get(0), contentX, textY, msgColor, false);
+            g.text(mc.font, drawLines.get(0), contentX, textY, msgColor, false);
             for (int i = 1; i < drawLines.size(); i++)
-                g.drawString(mc.font, drawLines.get(i), textX,
+                g.text(mc.font, drawLines.get(i), textX,
                     textY + i * lineH, msgColor, false);
         }
 
-        if (scale != 1f) g.pose().popPose();
+        if (scale != 1f) g.pose().popMatrix();
     }
 
     private Identifier getSkin(UUID uuid, String name) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.getConnection() != null && uuid != null && !uuid.equals(NIL_UUID)) {
             var info = mc.getConnection().getPlayerInfo(uuid);
-            if (info != null) return info.getSkin().texture();
+            if (info != null) return info.getSkin().body().texturePath();
         }
         if (uuid != null && !uuid.equals(NIL_UUID)) {
             Identifier cached = skinCache.get(uuid);
             if (cached != null) return cached;
-            PlayerSkin skin = mc.getSkinManager().getInsecureSkin(
-                new GameProfile(uuid, name != null ? name : ""));
-            if (skin != null && skin.texture() != null) {
-                skinCache.put(uuid, skin.texture());
-                return skin.texture();
+            // 26.2：getInsecureSkin 没了，走 createLookup 拿同步可用的 PlayerSkin；
+            // 贴图取 body().texturePath()（ClientAsset.Texture 不再是裸 Identifier）。
+            PlayerSkin skin = mc.getSkinManager().createLookup(
+                new GameProfile(uuid, name != null ? name : ""), false).get();
+            if (skin != null && skin.body() != null && skin.body().texturePath() != null) {
+                Identifier tex = skin.body().texturePath();
+                skinCache.put(uuid, tex);
+                return tex;
             }
         }
-        return DefaultPlayerSkin.get(uuid != null ? uuid : NIL_UUID).texture();
+        return DefaultPlayerSkin.get(uuid != null ? uuid : NIL_UUID).body().texturePath();
     }
 
     private void drawPlayerHead(GuiGraphicsExtractor g, Identifier skin, int x, int y,

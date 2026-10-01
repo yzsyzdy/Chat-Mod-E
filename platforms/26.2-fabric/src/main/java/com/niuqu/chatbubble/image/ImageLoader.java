@@ -333,7 +333,7 @@ public final class ImageLoader {
                     Identifier id = Identifier.fromNamespaceAndPath("e33chat", "img/" + hash(url));
                     TextureManager tm = Minecraft.getInstance().getTextureManager();
                     tm.release(id);
-                    tm.register(id, new net.minecraft.client.renderer.texture.DynamicTexture(uploadImage.image()));
+                    tm.register(id, new net.minecraft.client.renderer.texture.DynamicTexture(() -> "e33chat_upload", uploadImage.image()));
                     entry.markLoaded(id, uploadImage.image());
                     LOGGER.info("[e33chat] image upload OK {} -> {}x{} @ {}", url, entry.width(), entry.height(), id);
                 } catch (Throwable t) {

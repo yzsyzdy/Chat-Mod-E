@@ -2,7 +2,7 @@ package com.niuqu.chatbubble.ui;
 import com.niuqu.chatbubble.texture.UiTextureManager;
 import com.niuqu.chatbubble.texture.ColoredTextureRenderer;
 import com.niuqu.chatbubble.render.ChatBubbleTheme;
-import com.niuqu.chatbubble.render.ChatBubbleScreen;
+import com.niuqu.chatbubble.ChatBubbleScreen;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -63,7 +63,7 @@ public class ChatSettingsMenu {
         com.niuqu.chatbubble.texture.ColoredTextureRenderer.drawWithAlpha(g,
             com.niuqu.chatbubble.texture.UiTextureManager.rl(com.niuqu.chatbubble.texture.UiElement.CONTENT_BG),
             px, py, W, menuH, alpha);
-        g.renderOutline(px, py, W, menuH, ChatBubbleTheme.alphaBlend(c.divider(), a255));
+        g.outline(px, py, W, menuH, ChatBubbleTheme.alphaBlend(c.divider(), a255));
 
         Identifier[] icons = {
             iconTex.apply("search"), iconTex.apply("quick_chat"),
@@ -91,7 +91,7 @@ public class ChatSettingsMenu {
             int color = clearArmed && i == CLEAR_ROW
                 ? ChatBubbleTheme.alphaBlend(CLEAR_RED, a255)
                 : ChatBubbleTheme.alphaBlend(c.textPrimary(), a255);
-            g.drawString(font, Component.literal(label), px + 20, ry + 4, color, false);
+            g.text(font, Component.literal(label), px + 20, ry + 4, color, false);
         }
     }
 

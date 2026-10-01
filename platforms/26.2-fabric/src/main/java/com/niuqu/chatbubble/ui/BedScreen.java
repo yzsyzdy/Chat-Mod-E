@@ -25,28 +25,29 @@ public class BedScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
     }
 
     @Override
     public void tick() {
         if (minecraft == null || minecraft.player == null || !minecraft.player.isSleeping()) {
-            minecraft.setScreen(null);
+            minecraft.gui.setScreen(null);
             if (screenBeforeSleep instanceof ChatBubbleScreen) {
-                minecraft.setScreen(screenBeforeSleep);
+                minecraft.gui.setScreen(screenBeforeSleep);
             }
             screenBeforeSleep = null;
         }
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent e33key)
+        { int keyCode = e33key.key(); int scanCode = e33key.scancode(); int modifiers = e33key.modifiers();
         if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             sendWakeUp();
             return true;
         }
         if (minecraft.options.keyChat.matches(keyCode, scanCode)) {
-            minecraft.setScreen(new ChatBubbleScreen(""));
+            minecraft.gui.setScreen(new ChatBubbleScreen(""));
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);

@@ -44,17 +44,17 @@ public class ChatBubbleHudOverlay {
         // the debug screen is open" behavior here.
         if (mc.gui.getDebugOverlay().showDebugScreen()) return;
 
-        g.pose().pushPose();
+        g.pose().pushMatrix();
         g.pose().translate(0, 0, 300);
 
         MentionNotificationBanner.INSTANCE.tick();
-        if (mc.screen == null) {
+        if (mc.gui.screen() == null) {
             MentionNotificationBanner.INSTANCE.render(g,
                 mc.getWindow().getGuiScaledWidth(),
                 mc.getWindow().getGuiScaledHeight());
         }
 
-        if (mc.screen != null) { g.pose().popPose(); return; }
+        if (mc.gui.screen() != null) { g.pose().popMatrix(); return; }
 
         String keyName = mc.options.keyChat.getTranslatedKeyMessage().getString();
         int screenH = mc.getWindow().getGuiScaledHeight();
@@ -75,10 +75,10 @@ public class ChatBubbleHudOverlay {
             String keyDisplay = "[" + keyName + "]";
             int keyW = mc.font.width(keyDisplay);
             int keyX = keyW > ICON_S ? x : x + (ICON_S - keyW) / 2;
-            g.drawString(mc.font, keyDisplay, keyX, textY, 0xFFFFFFFF, false);
+            g.text(mc.font, keyDisplay, keyX, textY, 0xFFFFFFFF, false);
         }
 
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
 
     // Fabric's HUD layer draws behind the screen batch; screens that render over
@@ -87,7 +87,7 @@ public class ChatBubbleHudOverlay {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options == null) return;
         if (mc.gui.getDebugOverlay().showDebugScreen()) return;
-        if (mc.screen instanceof ChatBubbleScreen) {
+        if (mc.gui.screen() instanceof ChatBubbleScreen) {
             MentionNotificationBanner.INSTANCE.render(g,
                 mc.getWindow().getGuiScaledWidth(),
                 mc.getWindow().getGuiScaledHeight());
@@ -97,7 +97,7 @@ public class ChatBubbleHudOverlay {
     public static boolean isMouseOverIcon(double mx, double my) {
         if (cfg().hideChatIcon()) return false;
         Minecraft mc = Minecraft.getInstance();
-        if (mc.screen != null) return false;
+        if (mc.gui.screen() != null) return false;
         int screenH = mc.getWindow().getGuiScaledHeight();
         int iconY = screenH - ICON_S - cfg().hudIconY();
         return mx >= cfg().hudIconX() && mx <= cfg().hudIconX() + ICON_S && my >= iconY && my <= iconY + ICON_S + mc.font.lineHeight + 2;
@@ -111,6 +111,6 @@ public class ChatBubbleHudOverlay {
 
     private static void drawScaledTip(GuiGraphicsExtractor g, int x, int y, int disp) {
         Identifier tex = ChatBubbleScreen.iconTex("private_tip");
-        g.blit(tex, x, y, disp, disp, (float) SRC_U, (float) SRC_V, SRC_S, SRC_S, 16, 16);
+        g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, tex, x, y, disp, disp, (float) SRC_U, (float) SRC_V, SRC_S, SRC_S, 16, 16);
     }
 }

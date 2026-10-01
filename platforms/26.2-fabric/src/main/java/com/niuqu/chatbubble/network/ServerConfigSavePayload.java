@@ -47,8 +47,8 @@ public record ServerConfigSavePayload(boolean useTpa, boolean historyEnabled, bo
         Component error = validateTemplates(true, payload.chatTemplates());
         if (error == null) error = validateTemplates(false, payload.whisperTemplates());
         if (error != null) {
-            player.displayClientMessage(Component.translatable("e33chat.server.save_failed", error)
-                .withStyle(ChatFormatting.RED), false);
+            player.sendSystemMessage(Component.translatable("e33chat.server.save_failed", error)
+                .withStyle(ChatFormatting.RED));
             return;
         }
         ServerConfig cfg = new ServerConfig();
@@ -62,7 +62,7 @@ public record ServerConfigSavePayload(boolean useTpa, boolean historyEnabled, bo
         cfg.chat_templates = new ArrayList<>(payload.chatTemplates());
         cfg.whisper_templates = new ArrayList<>(payload.whisperTemplates());
         applyAndSave.accept(cfg);
-        player.displayClientMessage(Component.translatable("e33chat.server.saved"), false);
+        player.sendSystemMessage(Component.translatable("e33chat.server.saved"));
     }
 
     private static Component validateTemplates(boolean chat, List<String> templates) {

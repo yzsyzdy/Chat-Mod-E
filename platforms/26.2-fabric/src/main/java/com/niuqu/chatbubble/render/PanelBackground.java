@@ -117,7 +117,7 @@ public final class PanelBackground {
                 return;
             }
             try {
-                DynamicTexture tex = new DynamicTexture(decoded);
+                DynamicTexture tex = new DynamicTexture(() -> "e33chat_panel_bg", decoded);
                 Minecraft.getInstance().getTextureManager().register(ID, tex);
                 texW = decoded.getWidth();
                 texH = decoded.getHeight();

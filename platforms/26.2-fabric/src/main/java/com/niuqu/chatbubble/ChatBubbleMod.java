@@ -29,6 +29,7 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -109,29 +110,29 @@ public class ChatBubbleMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        PayloadTypeRegistry.playC2S().register(QuoteSyncPayload.ID, QuoteSyncPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(ChatMetaPayload.ID, ChatMetaPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(HistoryPayload.ID, HistoryPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(ConfigSyncPayload.ID, ConfigSyncPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(ConfigSyncV2Payload.ID, ConfigSyncV2Payload.CODEC);
-        PayloadTypeRegistry.playS2C().register(ServerConfigScreenPayload.ID, ServerConfigScreenPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(ServerConfigSavePayload.ID, ServerConfigSavePayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(MediaUploadPayload.ID, MediaUploadPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(MediaRequestPayload.ID, MediaRequestPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(MediaUploadAckPayload.ID, MediaUploadAckPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(MediaResponsePayload.ID, MediaResponsePayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(MediaCapPayload.ID, MediaCapPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(EasyBotConfigPayload.ID, EasyBotConfigPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(QuoteSyncPayload.ID, QuoteSyncPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ChatMetaPayload.ID, ChatMetaPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(HistoryPayload.ID, HistoryPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ConfigSyncPayload.ID, ConfigSyncPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ConfigSyncV2Payload.ID, ConfigSyncV2Payload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ServerConfigScreenPayload.ID, ServerConfigScreenPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ServerConfigSavePayload.ID, ServerConfigSavePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(MediaUploadPayload.ID, MediaUploadPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(MediaRequestPayload.ID, MediaRequestPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MediaUploadAckPayload.ID, MediaUploadAckPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MediaResponsePayload.ID, MediaResponsePayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(MediaCapPayload.ID, MediaCapPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(EasyBotConfigPayload.ID, EasyBotConfigPayload.CODEC);
         // 2.4.10 group chat: handshake / say / directory / manage. Old clients
         // drop unknown payloads harmlessly; a new client against an old server
         // just never receives group_list, so the tab strip stays hidden.
-        PayloadTypeRegistry.playC2S().register(ClientHelloPayload.ID, ClientHelloPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GroupChatPayload.ID, GroupChatPayload.CODEC);
-        PayloadTypeRegistry.playS2C().register(GroupListPayload.ID, GroupListPayload.CODEC);
-        PayloadTypeRegistry.playC2S().register(GroupActionPayload.ID, GroupActionPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ClientHelloPayload.ID, ClientHelloPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GroupChatPayload.ID, GroupChatPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(GroupListPayload.ID, GroupListPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(GroupActionPayload.ID, GroupActionPayload.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(MediaUploadPayload.ID, (payload, context) -> {
-            ServerPlayerEntity player = context.player();
+            ServerPlayer player = context.player();
             context.server().execute(() -> com.niuqu.chatbubble.server.MediaService.handleUpload(
                 player, mediaStore(context.server()), mediaEnabled, mediaAutoClean,
                 payload.uploadId(), payload.index(), payload.totalChunks(),
@@ -139,43 +140,44 @@ public class ChatBubbleMod implements ModInitializer {
         });
 
         ServerPlayNetworking.registerGlobalReceiver(MediaRequestPayload.ID, (payload, context) -> {
-            ServerPlayerEntity player = context.player();
+            ServerPlayer player = context.player();
             context.server().execute(() -> com.niuqu.chatbubble.server.MediaService.handleRequest(
                 player, mediaStore(context.server()), payload.mediaId()));
         });
 
         ServerPlayNetworking.registerGlobalReceiver(QuoteSyncPayload.ID, (payload, context) -> {
-            ServerPlayerEntity player = context.player();
+            ServerPlayer player = context.player();
             context.server().execute(() -> {
                 String messageHash = payload.messageHash();
-                pendingQuotes.put(player.getUuid(),
+                pendingQuotes.put(player.getUUID(),
                     new QuotePending(payload.quotedSenderName(), payload.quotedContent(), messageHash,
                         System.currentTimeMillis()));
             });
         });
 
         ServerPlayNetworking.registerGlobalReceiver(ClientHelloPayload.ID, (payload, context) -> {
-            ServerPlayerEntity player = context.player();
+            ServerPlayer player = context.player();
             context.server().execute(() -> ClientHelloPayload.handleServer(payload, player));
         });
 
         ServerPlayNetworking.registerGlobalReceiver(GroupActionPayload.ID, (payload, context) -> {
-            ServerPlayerEntity player = context.player();
+            ServerPlayer player = context.player();
             context.server().execute(() ->
                 com.niuqu.chatbubble.server.GroupManager.handleAction(player, payload.action(), payload.groupName()));
         });
 
         // Server-config GUI save: validate, persist to JSON, rebroadcast
         ServerPlayNetworking.registerGlobalReceiver(ServerConfigSavePayload.ID, (payload, context) -> {
-            ServerPlayerEntity player = context.player();
+            ServerPlayer player = context.player();
             context.server().execute(() -> {
-                if (!player.hasPermissionLevel(2)) {
-                    player.sendMessage(Text.translatable("e33chat.server.op_required")
-                        .formatted(Formatting.RED), false);
+                if (!((net.minecraft.server.permissions.LevelBasedPermissionSet) player.permissions())
+                        .level().isEqualOrHigherThan(net.minecraft.server.permissions.PermissionLevel.GAMEMASTERS)) {
+                    player.sendSystemMessage(Component.translatable("e33chat.server.op_required")
+                        .withStyle(net.minecraft.ChatFormatting.RED), false);
                     return;
                 }
                 ServerConfigSavePayload.handleServer(payload, player, cfg -> {
-                    var path = context.server().getSavePath(net.minecraft.util.WorldSavePath.ROOT)
+                    var path = context.server().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
                         .resolve("serverconfig").resolve("e33chat-server.json");
                     ServerConfigManager.save(path, cfg);
                     loadConfig(cfg);
@@ -188,27 +190,27 @@ public class ChatBubbleMod implements ModInitializer {
         });
 
         ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> {
-            String rawText = message.getContent().getString();
-            int playerCount = sender.getServer() != null
-                ? sender.getServer().getPlayerManager().getPlayerList().size() : 1;
+            String rawText = message.decoratedContent().getString();
+            int playerCount = sender.level().getServer() != null
+                ? sender.level().getServer().getPlayerList().getPlayers().size() : 1;
             List<String> mentions = extractMentions(rawText, playerCount);
 
-            QuotePending quote = takeQuote(sender.getUuid());
+            QuotePending quote = takeQuote(sender.getUUID());
             String messageHash = quote != null ? quote.messageHash() : String.valueOf(rawText.hashCode());
             String quoteSender = quote != null ? quote.quotedSenderName() : "";
             String quoteContent = quote != null ? quote.quotedContent() : "";
 
             if (quote != null || !mentions.isEmpty()) {
                 ChatMetaPayload meta = new ChatMetaPayload(
-                    sender.getUuid(), sender.getName().getString(), messageHash,
+                    sender.getUUID(), sender.getName().getString(), messageHash,
                     quoteSender, quoteContent, mentions);
-                for (ServerPlayerEntity p : sender.getServer().getPlayerManager().getPlayerList()) {
+                for (ServerPlayer p : sender.level().getServer().getPlayerList().getPlayers()) {
                     ServerPlayNetworking.send(p, meta);
                 }
             }
 
             addToHistory(new HistoryPayload.HistoryEntry(
-                sender.getUuid(), sender.getName().getString(), rawText,
+                sender.getUUID(), sender.getName().getString(), rawText,
                 System.currentTimeMillis(), false,
                 quote != null ? quote.quotedContent() : null,
                 quote != null ? quote.quotedSenderName() : null,
@@ -220,7 +222,7 @@ public class ChatBubbleMod implements ModInitializer {
             // NeoForge's per-world ModConfig.Type.SERVER convention)
             if (!configLoaded) {
                 configLoaded = true;
-                var configPath = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT)
+                var configPath = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
                     .resolve("serverconfig").resolve("e33chat-server.json");
                 ServerConfig config = ServerConfigManager.load(configPath);
                 loadConfig(config);
@@ -280,7 +282,7 @@ public class ChatBubbleMod implements ModInitializer {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             DiskMediaStore s = mediaStore;
             if (s != null) s.discardUploadsFor(handler.player.getName().getString());
-            com.niuqu.chatbubble.server.GroupManager.onPlayerLoggedOut(handler.player.getUuid());
+            com.niuqu.chatbubble.server.GroupManager.onPlayerLoggedOut(handler.player.getUUID());
         });
     }
 

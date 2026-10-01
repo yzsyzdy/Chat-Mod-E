@@ -99,7 +99,7 @@ public final class ChatPipeline {
             }).findFirst().orElse(null);
         UUID uid;
         if (info != null) {
-            uid = info.getProfile().getId();
+            uid = info.getProfile().id();
         } else {
             UUID su = ChatMessageStore.findSeenUuid(pl.playerName());
             uid = su != null ? su : new UUID(0, 0);
@@ -110,7 +110,7 @@ public final class ChatPipeline {
         ChatMessageStore.debugLog(() -> "[e33chat] " + logTag + "(player line) | name=" + pl.playerName() + " | content='" + pl.content() + "'");
         return new ChatMessageStore.SenderMeta(
             uid, displayName, contentComp, false,
-            info != null ? info.getProfile().getName() : pl.playerName(),
+            info != null ? info.getProfile().name() : pl.playerName(),
             false, null);
     }
 }

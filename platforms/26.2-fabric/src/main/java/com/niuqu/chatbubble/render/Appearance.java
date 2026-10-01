@@ -1,5 +1,5 @@
 package com.niuqu.chatbubble.render;
-import com.niuqu.chatbubble.render.ChatBubbleScreen;
+import com.niuqu.chatbubble.ChatBubbleScreen;
 import com.niuqu.chatbubble.config.ChatBubbleConfig;
 import com.niuqu.chatbubble.render.ChatBubbleTheme;
 
@@ -12,17 +12,17 @@ public final class Appearance {
 
     /** 当前主题的颜色快照（取色统一入口）。 */
     public static ChatBubbleTheme.Colors snapshot() {
-        return ChatBubbleConfig.THEME.get().colors();
+        return com.niuqu.chatbubble.ChatBubbleClientSetup.config().theme().colors();
     }
 
     /** 消息之间的垂直间距。 */
     public static int messageGap() {
-        return ChatBubbleConfig.MESSAGE_GAP.get();
+        return com.niuqu.chatbubble.ChatBubbleClientSetup.config().messageGap();
     }
 
 
     /** 消息气泡头像尺寸（像素）。 */
     public static int avatarSize() {
-        return ChatBubbleConfig.AVATAR_SIZE.get();
+        return com.niuqu.chatbubble.ChatBubbleClientSetup.config().avatarSize();
     }
 }

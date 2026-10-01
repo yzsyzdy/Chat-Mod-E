@@ -70,8 +70,8 @@ public final class TemplateLayer {
         var tpl = r.orElseThrow();
         String verified = tpl.verifiedName();
         var info = ChatClassifier.resolveOnlinePlayer(verified);
-        UUID uid = info != null ? info.getProfile().getId() : ChatMessageStore.findSeenUuid(verified);
-        String rawName = info != null ? info.getProfile().getName() : verified;
+        UUID uid = info != null ? info.getProfile().id() : ChatMessageStore.findSeenUuid(verified);
+        String rawName = info != null ? info.getProfile().name() : verified;
         boolean isSelf = uid != null && Minecraft.getInstance().player != null
             && uid.equals(Minecraft.getInstance().player.getUUID());
         if (isSelf) {

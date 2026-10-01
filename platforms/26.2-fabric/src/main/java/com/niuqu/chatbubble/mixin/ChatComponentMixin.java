@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.GuiMessageTag;
+import net.minecraft.client.multiplayer.chat.GuiMessageTag;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.ChatComponent;
@@ -29,39 +29,49 @@ public class ChatComponentMixin {
     private String lastRepostText;
     private long lastRepostTime;
 
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void onRender(GuiGraphicsExtractor context, int tickDelta, int mouseX, int mouseY,
+    // 【26.2 换了两套入口】旧版的 render(GuiGraphics,int,int,int,boolean) 变成了
+    // extractRenderState(GuiGraphicsExtractor, Font, int, int, int, DisplayMode, boolean)，
+    // addMessage 三个重载则拆成了 addPlayerMessage / addClientSystemMessage / addServerSystemMessage。
+    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
+    private void onRender(GuiGraphicsExtractor context, net.minecraft.client.gui.Font font,
+                          int ticks, int mouseX, int mouseY,
+                          net.minecraft.client.gui.components.ChatComponent.DisplayMode displayMode,
                           boolean focused, CallbackInfo ci) {
         e33chat$shifted = false;
         if (ChatBubbleClientSetup.config().enabled()) {
-            if (Minecraft.getInstance().screen instanceof ChatBubbleScreen) {
+            if (Minecraft.getInstance().gui.screen() instanceof ChatBubbleScreen) {
                 ci.cancel();
                 return;
             }
-            context.pose().pushPose();
-            context.pose().translate(0, -8, 0);
+            context.pose().pushMatrix();
+            context.pose().translate(0f, -8f);
             e33chat$shifted = true;
         }
     }
 
-    @Inject(method = "render", at = @At("RETURN"))
-    private void onRenderReturn(GuiGraphicsExtractor context, int tickDelta, int mouseX, int mouseY,
+    @Inject(method = "extractRenderState", at = @At("RETURN"))
+    private void onRenderReturn(GuiGraphicsExtractor context, net.minecraft.client.gui.Font font,
+                                int ticks, int mouseX, int mouseY,
+                                net.minecraft.client.gui.components.ChatComponent.DisplayMode displayMode,
                                 boolean focused, CallbackInfo ci) {
         if (e33chat$shifted) {
-            context.pose().popPose();
+            context.pose().popMatrix();
         }
     }
 
-    @Inject(method = "addMessage(Lnet/minecraft/network/chat/Component;)V",
-            at = @At("HEAD"), cancellable = true)
-    private void onAddMessage(Component message, CallbackInfo ci) {
+    @Inject(method = "addClientSystemMessage", at = @At("HEAD"), cancellable = true)
+    private void onAddClientSystemMessage(Component message, CallbackInfo ci) {
         captureMessage(message, ci);
     }
 
-    @Inject(method = "addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/GuiMessageTag;)V",
-            at = @At("HEAD"), cancellable = true)
-    private void onAddMessageFull(Component message, MessageSignature signature,
-                                  GuiMessageTag indicator, CallbackInfo ci) {
+    @Inject(method = "addServerSystemMessage", at = @At("HEAD"), cancellable = true)
+    private void onAddServerSystemMessage(Component message, CallbackInfo ci) {
+        captureMessage(message, ci);
+    }
+
+    @Inject(method = "addPlayerMessage", at = @At("HEAD"), cancellable = true)
+    private void onAddPlayerMessage(Component message, MessageSignature signature,
+                                    GuiMessageTag indicator, CallbackInfo ci) {
         captureMessage(message, ci);
     }
 
@@ -92,7 +102,7 @@ public class ChatComponentMixin {
         e33chat$reposting = true;
         // 3-arg addMessage with a null indicator: the 1-arg overload forces
         // MessageIndicator.system(), which logs "[System] [CHAT]" and styles the line
-        ((ChatComponent) (Object) this).addMessage(reformatted, null, null);
+        ((ChatComponent) (Object) this).addPlayerMessage(reformatted, null, null);
         e33chat$reposting = false;
     }
 
@@ -104,7 +114,7 @@ public class ChatComponentMixin {
         if (placeholder == finalComponent) return; // no image code, nothing to do
         ci.cancel();
         e33chat$reposting = true;
-        ((ChatComponent) (Object) this).addMessage(placeholder, null, null);
+        ((ChatComponent) (Object) this).addPlayerMessage(placeholder, null, null);
         e33chat$reposting = false;
     }
 

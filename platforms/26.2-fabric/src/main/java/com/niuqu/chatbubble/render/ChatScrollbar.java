@@ -1,10 +1,18 @@
 package com.niuqu.chatbubble.render;
 
-import com.niuqu.chatbubble.render.ChatBubbleTheme;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-
+/**
+ * Scrollbar geometry shared by SmoothScrollPane on Fabric.
+ *
+ * Fabric keeps the config-screen scrollbar rendering inline (GuiGraphicsExtractor +
+ * ColoredTextureRenderer), so this class carries only the pure geometry the
+ * extracted pane needs; it intentionally has no render method.
+ *
+ * 【为什么这份是「只有几何」的版本】旧的 Forge/Neo 端另有一份带 render() 的同名类，
+ * 而那个 render() 依赖 render.ChatLayout —— 那个类只在 Forge/Neo 平台存在，
+ * Fabric 侧从来没有。本仓缩到单目标时曾把带 render() 的那份抄过来，于是编不过；
+ * 这里换回 Fabric 原本的几何版（render() 在 Fabric 侧没有任何调用者）。
+ */
 public final class ChatScrollbar {
-
     public static final int WIDTH = 6;
     private static final int MIN_THUMB_H = 8;
     public static final int HOVER_ZONE = 20;
@@ -25,7 +33,8 @@ public final class ChatScrollbar {
     }
 
     public static float alphaTarget(boolean inZone, boolean dragging, long lastScrollTime) {
-        long since = net.minecraft.util.Util.getMillis() - lastScrollTime; // lastScrollTime 由 Util.getMillis() 赋值，同钟比较
+        // lastScrollTime 由 Util.getMillis() 赋值，同钟比较
+        long since = net.minecraft.util.Util.getMillis() - lastScrollTime;
         return (inZone || dragging || since < FADE_MS) ? 1f : 0f;
     }
 
@@ -40,27 +49,5 @@ public final class ChatScrollbar {
         return mouseX >= panelX + panelW - HOVER_ZONE
             && mouseX <= panelX + panelW
             && mouseY >= msgTop && mouseY < effectiveMsgBottom;
-    }
-
-    public static void render(GuiGraphicsExtractor g, ChatLayout layout, int mouseX, int mouseY,
-                              int maxScroll, int messageTotalH, int scrollOffset,
-                              boolean dragging, float alpha,
-                              int effectiveMsgBottom, int colorRgb) {
-        if (maxScroll <= 0) return;
-        if (alpha <= 0.005f && !dragging) return;
-
-        int trackX = layout.panelX() + layout.panelW() - WIDTH;
-        int trackH = effectiveMsgBottom - layout.msgTop();
-        int thumbH = thumbHeight(trackH, messageTotalH);
-        int thumbY = thumbY(layout.msgTop(), trackH, thumbH, scrollOffset, maxScroll);
-
-        // 纯色填充替代 drawWithAlpha：绕开消息路径 blend/flush 污染
-        // （4844270a 同机制：上游 drawWithAlpha → scrollbar 渐显只显最后一帧）
-        g.fill(trackX, layout.msgTop(), trackX + WIDTH, layout.msgTop() + trackH,
-            ChatBubbleTheme.alphaBlend(colorRgb, (int) (0x1A * alpha)));
-
-        float thumbBase = dragging ? 0xAA : isHoveringThumb(mouseX, mouseY, trackX, thumbY, thumbH) ? 0x88 : 0x66;
-        g.fill(trackX, thumbY, trackX + WIDTH, thumbY + thumbH,
-            ChatBubbleTheme.alphaBlend(colorRgb, (int) (thumbBase * alpha)));
     }
 }

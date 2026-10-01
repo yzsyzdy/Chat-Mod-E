@@ -348,7 +348,7 @@ public final class AnimatedImageLoader {
                         Identifier id = Identifier.fromNamespaceAndPath("e33chat",
                         "anim/" + Integer.toHexString(entry.url.hashCode()) + "_" + i);
                         Minecraft.getInstance().getTextureManager().register(
-                            id, new DynamicTexture(decoded.frames().get(i)));
+                            id, new DynamicTexture(() -> "e33chat_anim_frame", decoded.frames().get(i)));
                         ids[i] = id;
                     }
                     entry.frames = ids;

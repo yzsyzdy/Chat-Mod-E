@@ -29,10 +29,12 @@ public final class TellClickDetector {
             int s = pos[0], e = s + str.length();
             pos[0] = e;
             var click = style.getClickEvent();
-            if (tellName[0] == null && click != null
-                && click.getAction() == net.minecraft.network.chat.ClickEvent.Action.SUGGEST_COMMAND
-                && click.getValue() != null) {
-                String cmd = click.getValue();
+            // 26.2：ClickEvent 从「带 action + value 的类」改成密封接口 + 每种动作一个 record，
+            // 取值不能再走 getValue()，要用模式匹配拿具体子类型。
+            if (tellName[0] == null && click
+                    instanceof net.minecraft.network.chat.ClickEvent.SuggestCommand suggest
+                    && suggest.action() == net.minecraft.network.chat.ClickEvent.Action.SUGGEST_COMMAND) {
+                String cmd = suggest.command();
                 for (String p : new String[]{"/tell ", "/msg ", "/w ", "/whisper "}) {
                     if (cmd.startsWith(p)) {
                         String n = cmd.substring(p.length()).trim();
@@ -55,7 +57,7 @@ public final class TellClickDetector {
 
         net.minecraft.client.multiplayer.PlayerInfo sender = null;
         for (var info : player.connection.getOnlinePlayers()) {
-            String profile = info.getProfile().getName();
+            String profile = info.getProfile().name();
             if (profile.equals(tellName[0]) || profile.replaceAll("§.", "").equals(tellName[0])) {
                 sender = info;
                 break;
@@ -83,8 +85,8 @@ public final class TellClickDetector {
         int contentStart = MessagePresentation.skipSeparators(text, b);
         if (contentStart >= text.length()) return null;
 
-        String profile = sender != null ? sender.getProfile().getName() : tellName[0];
-        UUID id = sender != null ? sender.getProfile().getId() : cachedId;
+        String profile = sender != null ? sender.getProfile().name() : tellName[0];
+        UUID id = sender != null ? sender.getProfile().id() : cachedId;
         Component displayName = ChatPipeline.cleanNameArea(message, 0, b, tellName[0], Component.literal(profile));
         Component content = ChatMessageStore.sliceStyled(message, contentStart, text.length());
         ChatMessageStore.debugLog(() -> "[e33chat] System(tell click) | text='" + text + "' | name=" + profile + " | display='" + displayName.getString() + "' | content='" + content.getString() + "'");

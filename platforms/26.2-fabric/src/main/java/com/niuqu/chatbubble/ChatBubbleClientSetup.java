@@ -19,7 +19,8 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
@@ -116,8 +117,8 @@ public class ChatBubbleClientSetup implements ClientModInitializer {
         });
         // Server-config GUI: opened on the client only (server never loads the Screen)
         ClientPlayNetworking.registerGlobalReceiver(ServerConfigScreenPayload.ID, (payload, context) -> {
-            context.client().execute(() -> Minecraft.getInstance().setScreen(new ServerConfigScreen(
-                Minecraft.getInstance().currentScreen,
+            context.client().execute(() -> Minecraft.getInstance().gui.setScreen(new ServerConfigScreen(
+                Minecraft.getInstance().gui.screen(),
                 payload.useTpa(), payload.historyEnabled(), payload.templateDebug(),
                 payload.mediaEnabled(), payload.mediaAutoClean(), payload.easyBotCompat(),
                 payload.groupsEnabled(),
@@ -152,10 +153,14 @@ public class ChatBubbleClientSetup implements ClientModInitializer {
         ChatMessageStore.setMessageEffectObserver(
             new com.niuqu.chatbubble.chat.notification.ChatMessageEffects());
 
-        HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
-            if (!config.enabled()) return;
-            ChatBubbleHudOverlay.render(drawContext);
-        });
+        // 26.2：HudRenderCallback 已被 Fabric 删除，改为按「图层」注册 HUD 元素。
+        // 挂在 VanillaHudElements.CHAT 之后，保持原版聊天栏画完再画气泡的层序。
+        HudElementRegistry.attachElementAfter(VanillaHudElements.CHAT,
+            Identifier.fromNamespaceAndPath(ChatBubbleMod.MOD_ID, "chat_bubbles"),
+            (g, tickDelta) -> {
+                if (!config.enabled()) return;
+                ChatBubbleHudOverlay.render(g);
+            });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             ImageLoader.tick();
@@ -164,26 +169,28 @@ public class ChatBubbleClientSetup implements ClientModInitializer {
             if (!config.enabled()) return;
 
             String key;
-            if (client.world == null || client.player == null) {
+            if (client.level == null || client.player == null) {
                 key = null;
-            } else if (client.getServer() != null) {
-                key = "SP:" + client.getServer().getSaveProperties().getLevelName();
-            } else if (client.getCurrentServerEntry() != null) {
-                key = "MP:" + client.getCurrentServerEntry().name;
+            } else if (client.getSingleplayerServer() != null) {
+                key = "SP:" + client.getSingleplayerServer().getWorldData().getLevelName();
+            } else if (client.getCurrentServer() != null) {
+                key = "MP:" + client.getCurrentServer().name;
             } else {
                 key = "world";
             }
             ChatMessageStore.setCurrentWorld(key);
             ChatMessageStore.maybeAutoSave();
 
-            if (client.currentScreen == null) {
-                boolean leftDown = org.lwjgl.glfw.GLFW.glfwGetMouseButton(
-                    client.getWindow().getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+            if (client.gui.screen() == null) {
+                // 26.2：Window.getHandle() 与 GLFW.glfwGetMouseButton 这条路没了
+                // （Window 现在封装多后端，不再对外给 GLFW 句柄）。
+                // MouseHandler.isLeftPressed() 是同义的公开查询，语义更明确。
+                boolean leftDown = client.mouseHandler.isLeftPressed();
                 if (leftDown && !leftWasDown) {
-                    double mx = client.mouse.getX() * (double)client.getWindow().getScaledWidth() / (double)client.getWindow().getWidth();
-                    double my = client.mouse.getY() * (double)client.getWindow().getScaledHeight() / (double)client.getWindow().getHeight();
+                    double mx = client.mouseHandler.getScaledXPos(client.getWindow());
+                    double my = client.mouseHandler.getScaledYPos(client.getWindow());
                     if (ChatBubbleHudOverlay.isMouseOverIcon(mx, my)) {
-                        client.setScreen(new ChatBubbleScreen(""));
+                        client.gui.setScreen(new ChatBubbleScreen(""));
                     }
                 }
                 leftWasDown = leftDown;
@@ -193,7 +200,7 @@ public class ChatBubbleClientSetup implements ClientModInitializer {
         });
 
         ScreenEvents.BEFORE_INIT.register((client, screen, width, height) ->
-            ScreenEvents.afterRender(screen).register((scr, g, mouseX, mouseY, delta) -> {
+            ScreenEvents.afterExtract(screen).register((scr, g, mouseX, mouseY, delta) -> {
                 if (config.enabled()) ChatBubbleHudOverlay.renderBannerForScreen(g);
             })
         );
@@ -205,7 +212,7 @@ public class ChatBubbleClientSetup implements ClientModInitializer {
                     return Identifier.fromNamespaceAndPath(ChatBubbleMod.MOD_ID, "shader_reload");
                 }
                 @Override
-                public void reload(ResourceManager manager) {
+                public void onResourceManagerReload(ResourceManager manager) {
                     RoundRectRenderer.resetShader();
                 }
             }

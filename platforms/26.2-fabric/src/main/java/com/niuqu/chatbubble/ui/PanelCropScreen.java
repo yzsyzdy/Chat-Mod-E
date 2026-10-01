@@ -124,7 +124,7 @@ public class PanelCropScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g, mouseX, mouseY, partialTick);
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
@@ -140,7 +140,7 @@ public class PanelCropScreen extends Screen {
             String reason = PanelBackground.failed() ? "e33chat.crop.failed"
                 : PanelBackground.loading() ? "e33chat.crop.loading" : "e33chat.crop.no_image";
             String msg = net.minecraft.network.chat.Component.translatable(reason).getString();
-            g.drawString(font, msg, (width - font.width(msg)) / 2, height / 2,
+            g.text(font, msg, (width - font.width(msg)) / 2, height / 2,
                 PanelBackground.failed() ? 0xFFFF6666 : c.textSecondary(), false);
         }
 
@@ -162,7 +162,7 @@ public class PanelCropScreen extends Screen {
 
         // Hint + buttons
         String hint = Component.translatable("e33chat.crop.hint").getString();
-        g.drawString(font, hint, PAD, btnY + 6, c.textSecondary(), false);
+        g.text(font, hint, PAD, btnY + 6, c.textSecondary(), false);
 
         boolean hoverCancel = over(mouseX, mouseY, btnCancelX, btnY, BTN_W, BTN_H);
         boolean hoverConfirm = over(mouseX, mouseY, btnConfirmX, btnY, BTN_W, BTN_H);
@@ -172,14 +172,15 @@ public class PanelCropScreen extends Screen {
             hoverConfirm ? 0xFF3A5FCD : 0xFF2C4A9E);
         String cancelLabel = Component.translatable("gui.cancel").getString();
         String confirmLabel = Component.translatable("gui.done").getString();
-        g.drawString(font, cancelLabel,
+        g.text(font, cancelLabel,
             btnCancelX + (BTN_W - font.width(cancelLabel)) / 2, btnY + 6, 0xFFFFFFFF, false);
-        g.drawString(font, confirmLabel,
+        g.text(font, confirmLabel,
             btnConfirmX + (BTN_W - font.width(confirmLabel)) / 2, btnY + 6, 0xFFFFFFFF, false);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent e33event, boolean e33double)
+        { double mouseX = e33event.x(); double mouseY = e33event.y(); int button = e33event.button();
         if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
         if (over(mouseX, mouseY, btnCancelX, btnY, BTN_W, BTN_H)) {
             onClose();
@@ -188,7 +189,7 @@ public class PanelCropScreen extends Screen {
         if (over(mouseX, mouseY, btnConfirmX, btnY, BTN_W, BTN_H)) {
             ChatBubbleClientSetup.saveConfig(ChatBubbleClientSetup.config().withPanelBgCrop(
                 PanelBackground.formatCrop(new PanelBackground.Crop(centerX, centerY, zoom))));
-            Minecraft.getInstance().setScreen(parent);
+            Minecraft.getInstance().gui.setScreen(parent);
             return true;
         }
         int[] sel = selectionScreenRect();
@@ -200,7 +201,8 @@ public class PanelCropScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent e33event, double dragX, double dragY)
+        { double mouseX = e33event.x(); double mouseY = e33event.y(); int button = e33event.button();
         if (dragging && dispW > 0 && dispH > 0) {
             // Screen delta -> normalized picture delta. Clamped so a stray drag can
             // never push the window off the picture (sourceRect clamps again too).
@@ -212,7 +214,8 @@ public class PanelCropScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent e33event)
+        { double mouseX = e33event.x(); double mouseY = e33event.y(); int button = e33event.button();
         dragging = false;
         return super.mouseReleased(mouseX, mouseY, button);
     }
@@ -232,7 +235,7 @@ public class PanelCropScreen extends Screen {
 
     @Override
     public void onClose() {
-        Minecraft.getInstance().setScreen(parent);
+        Minecraft.getInstance().gui.setScreen(parent);
     }
 
     @Override

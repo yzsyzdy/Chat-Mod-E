@@ -66,15 +66,15 @@ public class GroupBrowserPanel {
 
         ColoredTextureRenderer.drawWithAlpha(g, UiTextureManager.rl(UiElement.CONTENT_BG),
             px, py, w, h, alpha);
-        g.renderOutline(px, py, w, h, ChatBubbleTheme.alphaBlend(c.divider(), a255));
+        g.outline(px, py, w, h, ChatBubbleTheme.alphaBlend(c.divider(), a255));
 
         int y = py + 3;
-        g.drawString(font, Component.translatable("e33chat.group.browser_title").getString(),
+        g.text(font, Component.translatable("e33chat.group.browser_title").getString(),
             px + 6, y, ChatBubbleTheme.alphaBlend(c.textPrimary(), a255), false);
         // 加入是"点群名即可"，没有邀请流程——把这句话写在标题右侧，省得玩家
         // 以为要先邀请/被邀请（2.4.11 用户反馈）。
         String hint = Component.translatable("e33chat.group.browser_hint").getString();
-        g.drawString(font, hint, px + w - 6 - font.width(hint), y,
+        g.text(font, hint, px + w - 6 - font.width(hint), y,
             ChatBubbleTheme.alphaBlend(c.textMuted(), a255), false);
         y += TITLE_H;
 
@@ -96,7 +96,7 @@ public class GroupBrowserPanel {
                 g.fill(px + 3, rowY, px + w - 3, rowY + ROW_H,
                     ChatBubbleTheme.alphaBlend(c.sidebarItemHover(), a255));
             }
-            g.drawString(font, name, px + 6, rowY + (ROW_H - font.lineHeight) / 2 + 1,
+            g.text(font, name, px + 6, rowY + (ROW_H - font.lineHeight) / 2 + 1,
                 ChatBubbleTheme.alphaBlend(c.textPrimary(), a255), false);
             rowRects.add(new int[]{px + 3, rowY, px + w - 3, rowY + ROW_H});
             rowGroups.add(name);
@@ -108,14 +108,14 @@ public class GroupBrowserPanel {
                     && mouseY >= rowY + 1 && mouseY <= rowY + ROW_H - 1;
                 g.fill(bx, rowY + 1, bx + bw, rowY + ROW_H - 1,
                     ChatBubbleTheme.alphaBlend(btnHover ? c.contextHover() : c.popupBg(), a255));
-                g.drawString(font, leave, bx + 4, rowY + (ROW_H - font.lineHeight) / 2 + 1,
+                g.text(font, leave, bx + 4, rowY + (ROW_H - font.lineHeight) / 2 + 1,
                     ChatBubbleTheme.alphaBlend(c.textSecondary(), a255), false);
                 leaveBtn = new int[]{bx, rowY + 1, bx + bw, rowY + ROW_H - 1};
             }
             y += ROW_H + 2;
         }
         if (groups.size() > MAX_ROWS) {
-            g.drawString(font, Component.translatable("e33chat.group.more_hint", groups.size() - MAX_ROWS).getString(),
+            g.text(font, Component.translatable("e33chat.group.more_hint", groups.size() - MAX_ROWS).getString(),
                 px + 6, y + 1, ChatBubbleTheme.alphaBlend(c.textMuted(), a255), false);
             y += ROW_H + 2;
         }
@@ -127,14 +127,14 @@ public class GroupBrowserPanel {
         boolean inputHover = mouseX >= px + 4 && mouseX <= px + 4 + inputW
             && mouseY >= y && mouseY <= y + INPUT_H;
         if (inputHover || createInput.isFocused())
-            g.renderOutline(px + 4, y, inputW, INPUT_H, ChatBubbleTheme.alphaBlend(c.textMuted(), a255));
+            g.outline(px + 4, y, inputW, INPUT_H, ChatBubbleTheme.alphaBlend(c.textMuted(), a255));
         createInput.setX(px + 6);
         createInput.setY(y + 3);
         createInput.setWidth(inputW - 4);
         createInput.setHeight(INPUT_H - 2);
         createInput.setVisible(true);
         if (createInput.getValue().isEmpty()) {
-            g.drawString(font, Component.translatable("e33chat.group.create_placeholder").getString(),
+            g.text(font, Component.translatable("e33chat.group.create_placeholder").getString(),
                 px + 6, y + 3, ChatBubbleTheme.alphaBlend(c.textMuted(), a255), false);
         }
 
@@ -144,8 +144,8 @@ public class GroupBrowserPanel {
         boolean btnHover = mouseX >= bx && mouseX <= bx + bw && mouseY >= y && mouseY <= y + INPUT_H;
         g.fill(bx, y, bx + bw, y + INPUT_H,
             ChatBubbleTheme.alphaBlend(btnHover ? c.contextHover() : c.popupBg(), a255));
-        g.renderOutline(bx, y, bw, INPUT_H, ChatBubbleTheme.alphaBlend(c.divider(), a255));
-        g.drawString(font, create, bx + 4, y + (INPUT_H - font.lineHeight) / 2 + 1,
+        g.outline(bx, y, bw, INPUT_H, ChatBubbleTheme.alphaBlend(c.divider(), a255));
+        g.text(font, create, bx + 4, y + (INPUT_H - font.lineHeight) / 2 + 1,
             ChatBubbleTheme.alphaBlend(c.textPrimary(), a255), false);
         createBtn = new int[]{bx, y, bx + bw, y + INPUT_H};
     }

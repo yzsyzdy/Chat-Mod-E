@@ -23,13 +23,13 @@ public final class WhisperDetector {
         // G3: 消息嵌 legacy 色码（S§6t§beve）时整条剥 § 再做名字锚点匹配
         String clean = text.replaceAll("§.", "");
         for (var info : connection.getOnlinePlayers()) {
-            String profile = info.getProfile().getName();
+            String profile = info.getProfile().name();
             for (String cand : ChatClassifier.nameCandidates(info)) {
                 int idx = clean.indexOf(cand);
                 if (idx >= 0 && idx < 30) {
                     if (MessagePresentation.hasWhisperKeywordBeforeColon(clean)) {
                         String content = MessagePresentation.extractWhisperContent(clean, cand);
-                        UUID senderId = info.getProfile().getId();
+                        UUID senderId = info.getProfile().id();
                         ChatMessageStore.debugLog(() -> "[e33chat] System(" + logTag + ") | text='" + clean + "' | name=" + cand + " | content='" + content + "'");
                         return new ChatMessageStore.SenderMeta(
                             senderId,

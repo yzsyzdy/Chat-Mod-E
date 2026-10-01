@@ -21,7 +21,7 @@ public final class ChatClassifier {
     // legacy plugins may embed section-sign color codes in names, so offer stripped variants too
     public static String[] nameCandidates(PlayerInfo info) {
         var out = new java.util.LinkedHashSet<String>();
-        String profile = info.getProfile().getName();
+        String profile = info.getProfile().name();
         addNameVariants(out, profile);
         var tab = info.getTabListDisplayName();
         if (tab != null) addNameVariants(out, tab.getString().trim());
@@ -104,8 +104,8 @@ public final class ChatClassifier {
                 return false;
             }
             var info = resolveOnlinePlayer(displayName);
-            String profile = info != null ? info.getProfile().getName() : displayName;
-            UUID uuid = info != null ? info.getProfile().getId() : new UUID(0, 0);
+            String profile = info != null ? info.getProfile().name() : displayName;
+            UUID uuid = info != null ? info.getProfile().id() : new UUID(0, 0);
             ChatMessageStore.debugLog(() -> "[e33chat] Key(whisper in) | name=" + profile + " | content='" + content.getString() + "'");
             ChatMessageStore.setPendingMeta(new ChatMessageStore.SenderMeta(uuid, name, content, false, profile, true, profile));
             return true;
@@ -156,8 +156,8 @@ public final class ChatClassifier {
             String profile;
             UUID uuid;
             if (info != null) {
-                profile = info.getProfile().getName();
-                uuid = info.getProfile().getId();
+                profile = info.getProfile().name();
+                uuid = info.getProfile().id();
             } else {
                 UUID su = ChatMessageStore.findSeenUuid(displayName);
                 if (su != null) {
@@ -174,7 +174,8 @@ public final class ChatClassifier {
         }
 
         if (isVanillaBroadcast(message)) {
-            boolean isSystem = !ChatBubbleConfig.SYSTEM_CHAT_AS_BUBBLE.get();
+            // 26.2：配置项从静态 Holder 改成了 record 访问器（systemChatAsBubble()）。
+            boolean isSystem = !com.niuqu.chatbubble.ChatBubbleClientSetup.config().systemChatAsBubble();
             ChatMessageStore.debugLog(() -> "[e33chat] Key(broadcast) | key=" + key);
             ChatMessageStore.setPendingMeta(new ChatMessageStore.SenderMeta(new UUID(0, 0),
                 Component.translatable("e33chat.sender.system"), message, isSystem, null, false, null));

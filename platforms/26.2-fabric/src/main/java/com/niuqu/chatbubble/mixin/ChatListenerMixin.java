@@ -117,7 +117,7 @@ public class ChatListenerMixin {
     @Inject(method = "handlePlayerChatMessage", at = @At("HEAD"))
     private void onPlayerChat(PlayerChatMessage message, GameProfile gameProfile,
                                ChatType.Bound params, CallbackInfo ci) {
-        UUID senderId = gameProfile.getId();
+        UUID senderId = gameProfile.id();
         Component raw = message.decoratedContent();
         String rawStr = raw.getString();
         if (rawStr.startsWith("xaero-waypoint:")
@@ -125,7 +125,7 @@ public class ChatListenerMixin {
             || rawStr.startsWith("xaero_waypoint_add:")) {
             return;
         }
-        String name = gameProfile.getName();
+        String name = gameProfile.name();
 
         boolean isWhisper = false;
         boolean isOutgoing = false;

@@ -20,53 +20,53 @@ public class E33ChatCommands {
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            var tpl = net.minecraft.server.command.CommandManager.literal("template")
+            var tpl = net.minecraft.commands.Commands.literal("template")
                 .requires(s -> s.hasPermissionLevel(2));
-            tpl.then(net.minecraft.server.command.CommandManager.literal("list")
+            tpl.then(net.minecraft.commands.Commands.literal("list")
                 .executes(ctx -> list(ctx.getSource())));
 
-            tpl.then(net.minecraft.server.command.CommandManager.literal("set")
-                .then(net.minecraft.server.command.CommandManager.literal("chat")
-                    .then(net.minecraft.server.command.CommandManager.argument("template", StringArgumentType.greedyString())
+            tpl.then(net.minecraft.commands.Commands.literal("set")
+                .then(net.minecraft.commands.Commands.literal("chat")
+                    .then(net.minecraft.commands.Commands.argument("template", StringArgumentType.greedyString())
                         .executes(ctx -> set(ctx.getSource(), true,
                             StringArgumentType.getString(ctx, "template")))))
-                .then(net.minecraft.server.command.CommandManager.literal("whisper")
-                    .then(net.minecraft.server.command.CommandManager.argument("template", StringArgumentType.greedyString())
+                .then(net.minecraft.commands.Commands.literal("whisper")
+                    .then(net.minecraft.commands.Commands.argument("template", StringArgumentType.greedyString())
                         .executes(ctx -> set(ctx.getSource(), false,
                             StringArgumentType.getString(ctx, "template"))))));
 
-            tpl.then(net.minecraft.server.command.CommandManager.literal("remove")
-                .then(net.minecraft.server.command.CommandManager.literal("chat")
-                    .then(net.minecraft.server.command.CommandManager.argument("index", IntegerArgumentType.integer(1))
+            tpl.then(net.minecraft.commands.Commands.literal("remove")
+                .then(net.minecraft.commands.Commands.literal("chat")
+                    .then(net.minecraft.commands.Commands.argument("index", IntegerArgumentType.integer(1))
                         .executes(ctx -> remove(ctx.getSource(), true,
                             IntegerArgumentType.getInteger(ctx, "index")))))
-                .then(net.minecraft.server.command.CommandManager.literal("whisper")
-                    .then(net.minecraft.server.command.CommandManager.argument("index", IntegerArgumentType.integer(1))
+                .then(net.minecraft.commands.Commands.literal("whisper")
+                    .then(net.minecraft.commands.Commands.argument("index", IntegerArgumentType.integer(1))
                         .executes(ctx -> remove(ctx.getSource(), false,
                             IntegerArgumentType.getInteger(ctx, "index"))))));
 
-            tpl.then(net.minecraft.server.command.CommandManager.literal("clear")
-                .then(net.minecraft.server.command.CommandManager.literal("chat")
+            tpl.then(net.minecraft.commands.Commands.literal("clear")
+                .then(net.minecraft.commands.Commands.literal("chat")
                     .executes(ctx -> clear(ctx.getSource(), true)))
-                .then(net.minecraft.server.command.CommandManager.literal("whisper")
+                .then(net.minecraft.commands.Commands.literal("whisper")
                     .executes(ctx -> clear(ctx.getSource(), false))));
 
-            tpl.then(net.minecraft.server.command.CommandManager.literal("test")
-                .then(net.minecraft.server.command.CommandManager.literal("chat")
-                    .then(net.minecraft.server.command.CommandManager.argument("index", IntegerArgumentType.integer(1))
-                        .then(net.minecraft.server.command.CommandManager.argument("text", StringArgumentType.greedyString())
+            tpl.then(net.minecraft.commands.Commands.literal("test")
+                .then(net.minecraft.commands.Commands.literal("chat")
+                    .then(net.minecraft.commands.Commands.argument("index", IntegerArgumentType.integer(1))
+                        .then(net.minecraft.commands.Commands.argument("text", StringArgumentType.greedyString())
                             .executes(ctx -> test(ctx.getSource(), true,
                                 IntegerArgumentType.getInteger(ctx, "index"),
                                 StringArgumentType.getString(ctx, "text"))))))
-                .then(net.minecraft.server.command.CommandManager.literal("whisper")
-                    .then(net.minecraft.server.command.CommandManager.argument("index", IntegerArgumentType.integer(1))
-                        .then(net.minecraft.server.command.CommandManager.argument("text", StringArgumentType.greedyString())
+                .then(net.minecraft.commands.Commands.literal("whisper")
+                    .then(net.minecraft.commands.Commands.argument("index", IntegerArgumentType.integer(1))
+                        .then(net.minecraft.commands.Commands.argument("text", StringArgumentType.greedyString())
                             .executes(ctx -> test(ctx.getSource(), false,
                                 IntegerArgumentType.getInteger(ctx, "index"),
                                 StringArgumentType.getString(ctx, "text")))))));
 
-            dispatcher.register(net.minecraft.server.command.CommandManager.literal("e33chat")
-                .then(net.minecraft.server.command.CommandManager.literal("gui")
+            dispatcher.register(net.minecraft.commands.Commands.literal("e33chat")
+                .then(net.minecraft.commands.Commands.literal("gui")
                     .requires(s -> s.hasPermissionLevel(2))
                     .executes(ctx -> openServerGui(ctx.getSource())))
                 .then(tpl)

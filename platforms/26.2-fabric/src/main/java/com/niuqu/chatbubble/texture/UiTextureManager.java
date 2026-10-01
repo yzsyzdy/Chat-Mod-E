@@ -24,6 +24,6 @@ public final class UiTextureManager {
     }
 
     public static ChatBubbleTheme currentTheme() {
-        return ChatBubbleConfig.THEME.get();
+        return com.niuqu.chatbubble.ChatBubbleClientSetup.config().theme().get();
     }
 }

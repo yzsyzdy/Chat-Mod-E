@@ -161,7 +161,7 @@ public final class EasyBotParser {
             if (mc != null && mc.player != null && mc.player.connection != null) {
                 for (net.minecraft.client.multiplayer.PlayerInfo info : mc.player.connection.getOnlinePlayers()) {
                     for (String cand : ChatClassifier.nameCandidates(info)) {
-                        if (cand.equalsIgnoreCase(name)) return info.getProfile().getId();
+                        if (cand.equalsIgnoreCase(name)) return info.getProfile().id();
                     }
                 }
             }

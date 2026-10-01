@@ -7,7 +7,9 @@ import com.niuqu.chatbubble.chat.MentionDetector;
 import com.niuqu.chatbubble.chat.notification.MentionNotificationBanner.NotificationType;
 import java.util.*;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 
 public class MentionNotificationController {
     public static final MentionNotificationController INSTANCE = new MentionNotificationController();
@@ -33,7 +35,7 @@ public class MentionNotificationController {
 
         boolean isOwn = (meta.senderUUID() != null && meta.senderUUID().equals(mc.player.getUUID()))
             || (meta.rawPlayerName() != null && meta.rawPlayerName().equals(localName));
-        boolean chatOpen = mc.screen instanceof ChatBubbleScreen;
+        boolean chatOpen = mc.gui.screen() instanceof ChatBubbleScreen;
         NotificationType type = (replySender != null && replySender.equals(localName))
             ? NotificationType.QUOTE : NotificationType.MENTION;
         boolean selfNotify = isOwn && (type == NotificationType.QUOTE
@@ -51,8 +53,12 @@ public class MentionNotificationController {
             + " | preview=" + text.substring(0, Math.min(40, text.length())));
 
         if ((!isOwn || selfNotify) && ChatBubbleClientSetup.config().mentionSoundEnabled()) {
-            NotificationSoundGate.tryPlay(() -> mc.getSoundManager().play(PositionedSoundInstance.master(
-                SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 0.25f,
+            // 26.2 里 PositionedSoundInstance 已删除，UI 音效走 SimpleSoundInstance.forUI。
+            // ENTITY_EXPERIENCE_ORB_PICKUP 也没了，用音高 2.0 的 NOTE_BLOCK_CHIME 顶上
+            // —— 仍是短促清脆的「叮」，与原来 orb pickup 的听感一致。
+            NotificationSoundGate.tryPlay(() -> mc.getSoundManager().play(SimpleSoundInstance.forUI(
+                SoundEvents.NOTE_BLOCK_CHIME.value(),
+                2.0f,
                 0.25f * ChatBubbleClientSetup.config().soundVolume() / 100f)));
         }
 
@@ -66,7 +72,7 @@ public class MentionNotificationController {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        boolean chatOpen = mc.screen instanceof ChatBubbleScreen;
+        boolean chatOpen = mc.gui.screen() instanceof ChatBubbleScreen;
         String senderStr = senderName.getString().replaceAll("§.", "");
         boolean isOwn = (senderUUID != null && senderUUID.equals(mc.player.getUUID()))
             || mc.player.getName().getString().equals(senderStr);
@@ -79,8 +85,9 @@ public class MentionNotificationController {
 
         boolean selfNotify = isOwn && ChatBubbleClientSetup.config().ownWhisperNotify();
         if ((!isOwn || selfNotify) && ChatBubbleClientSetup.config().soundWhisper()) {
-            NotificationSoundGate.tryPlay(() -> mc.getSoundManager().play(PositionedSoundInstance.master(
-                SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 0.25f,
+            NotificationSoundGate.tryPlay(() -> mc.getSoundManager().play(SimpleSoundInstance.forUI(
+                SoundEvents.NOTE_BLOCK_CHIME.value(),
+                2.0f,
                 0.25f * ChatBubbleClientSetup.config().soundVolume() / 100f)));
         }
 

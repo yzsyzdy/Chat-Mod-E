@@ -54,13 +54,13 @@ public class PlayerProfileScreen extends Screen {
         PlayerInfo exact = mc.getConnection().getPlayerInfo(playerName);
         if (exact != null) return exact;
         for (PlayerInfo p : mc.getConnection().getOnlinePlayers()) {
-            if (p.getProfile().getName().equalsIgnoreCase(playerName)) return p;
+            if (p.getProfile().name().equalsIgnoreCase(playerName)) return p;
         }
         return null;
     }
 
     @Override
-    public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g, mouseX, mouseY, partialTick);
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
@@ -74,7 +74,7 @@ public class PlayerProfileScreen extends Screen {
         boolean online = info != null;
         boolean isSelf = Minecraft.getInstance().player != null
             && Minecraft.getInstance().player.getName().getString().equalsIgnoreCase(playerName);
-        UUID uuid = online ? info.getProfile().getId() : null;
+        UUID uuid = online ? info.getProfile().id() : null;
 
         // Hero: head (face + hat layer)
         int headS = 40;
@@ -94,8 +94,8 @@ public class PlayerProfileScreen extends Screen {
         int totalW = nameW + 6 + font.width(badge);
         int nameX = panelX + (PANEL_W - totalW) / 2;
         int nameY = headY + headS + 8;
-        g.drawString(font, playerName, nameX, nameY, c.textPrimary(), false);
-        g.drawString(font, badge, nameX + nameW + 6, nameY, badgeColor, false);
+        g.text(font, playerName, nameX, nameY, c.textPrimary(), false);
+        g.text(font, badge, nameX + nameW + 6, nameY, badgeColor, false);
 
         // Fields
         int fieldX = panelX + 16;
@@ -118,19 +118,19 @@ public class PlayerProfileScreen extends Screen {
             hoverC ? 0xFF4A4A52 : 0xFF36363E);
         String whisperLabel = Component.translatable("e33chat.context.whisper").getString();
         String copyLabel = Component.translatable("e33chat.profile.copy_uuid").getString();
-        g.drawString(font, whisperLabel,
+        g.text(font, whisperLabel,
             btnWhisperX + (btnW - font.width(whisperLabel)) / 2, btnY + 4, 0xFFFFFFFF, false);
-        g.drawString(font, copyLabel,
+        g.text(font, copyLabel,
             btnCopyX + (btnW - font.width(copyLabel)) / 2, btnY + 4, 0xFFFFFFFF, false);
     }
 
     private int drawField(GuiGraphicsExtractor g, String label, String value, int x, int y, int lineH,
                           ChatBubbleTheme.Colors c) {
-        g.drawString(font, label, x, y, c.textSecondary(), false);
+        g.text(font, label, x, y, c.textSecondary(), false);
         String v = value;
         int maxW = PANEL_W - 32 - 60;
         if (font.width(v) > maxW) v = font.plainSubstrByWidth(v, maxW - font.width("…")) + "…";
-        g.drawString(font, v, x + 60, y, c.textPrimary(), false);
+        g.text(font, v, x + 60, y, c.textPrimary(), false);
         return y + lineH;
     }
 
@@ -139,7 +139,8 @@ public class PlayerProfileScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent e33event, boolean e33double)
+        { double mouseX = e33event.x(); double mouseY = e33event.y(); int button = e33event.button();
         if (button == 0) {
             if (over(mouseX, mouseY, btnWhisperX, btnY, btnW, BTN_H)) {
                 Minecraft mc = Minecraft.getInstance();
@@ -149,7 +150,7 @@ public class PlayerProfileScreen extends Screen {
             }
             if (over(mouseX, mouseY, btnCopyX, btnY, btnW, BTN_H)) {
                 PlayerInfo info = info();
-                String text = info != null ? info.getProfile().getId().toString() : playerName;
+                String text = info != null ? info.getProfile().id().toString() : playerName;
                 Minecraft.getInstance().keyboardHandler.setClipboard(text);
                 return true;
             }
@@ -164,7 +165,7 @@ public class PlayerProfileScreen extends Screen {
 
     @Override
     public void onClose() {
-        Minecraft.getInstance().setScreen(parent);
+        Minecraft.getInstance().gui.setScreen(parent);
     }
 
     @Override

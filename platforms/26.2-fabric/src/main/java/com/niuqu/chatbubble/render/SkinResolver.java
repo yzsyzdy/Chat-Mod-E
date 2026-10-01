@@ -62,7 +62,7 @@ public final class SkinResolver {
         if (client.getConnection() != null && uuid != null && !uuid.equals(NIL_UUID)) {
             PlayerInfo info = client.getConnection().getPlayerInfo(uuid);
             if (info != null) {
-                Identifier tex = info.getSkin().texture();
+                Identifier tex = info.getSkin().texturePath();
                 rememberSkin(uuid, name, tex);
                 return tex;
             }
@@ -83,16 +83,30 @@ public final class SkinResolver {
 
     private static Identifier resolveSkin(UUID uuid, String name) {
         Minecraft client = Minecraft.getInstance();
-        // Route through PlayerSkinProvider with a name-bearing GameProfile so CSL
-        // can match offline players to imported skins. getSkinTextures(GameProfile)
-        // is the Yarn equivalent of Mojang's SkinManager.getInsecureSkin().
+        // Route through SkinManager with a name-bearing GameProfile so CSL
+        // can match offline players to imported skins.
+        //
+        // 【26.2 的三处变化】
+        //  1. PlayerSkin 从 client.resources 搬到 world.entity.player，且变成 record；
+        //  2. 皮肤贴图不再是裸 Identifier，而是 ClientAsset.Texture，取路径要 texturePath()；
+        //  3. SkinManager.getInsecureSkin(GameProfile) 没了，改成
+        //     createLookup(GameProfile, boolean) 返回 Supplier<PlayerSkin>（同步可用）。
         if (name != null && !name.isEmpty()) {
             try {
                 GameProfile profile = new GameProfile(
                     uuid != null && !uuid.equals(NIL_UUID) ? uuid : NIL_UUID, name);
-                return client.getSkinManager().getInsecureSkin(profile).texture();
+                return client.getSkinManager().createLookup(profile, false).get().body().texturePath();
             } catch (Exception ignored) {}
         }
-        return DefaultPlayerSkin.getDefaultTexture();
+        return defaultSkinTexture(uuid);
+    }
+
+    /** 26.2：DefaultPlayerSkin.getDefaultTexture() 没了，改成按 UUID 取 PlayerSkin 再取身体贴图。 */
+    private static Identifier defaultSkinTexture(UUID uuid) {
+        try {
+            return DefaultPlayerSkin.get(uuid != null ? uuid : NIL_UUID).body().texturePath();
+        } catch (Exception ignored) {
+            return DefaultPlayerSkin.get(NIL_UUID).body().texturePath();
+        }
     }
 }

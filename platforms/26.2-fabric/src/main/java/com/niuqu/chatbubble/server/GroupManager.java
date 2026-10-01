@@ -215,7 +215,7 @@ public final class GroupManager {
             if (modClients.contains(p.getUUID())) {
                 ServerPlayNetworking.send(p, packet);
             } else {
-                p.displayClientMessage(Component.literal(vanillaLine), false);
+                p.sendSystemMessage(Component.literal(vanillaLine));
             }
         }
         ChatBubbleMod.addHistoryEntry(new HistoryPayload.HistoryEntry(
@@ -370,11 +370,11 @@ public final class GroupManager {
     }
 
     private static void ok(ServerPlayer p, String key, Object... args) {
-        p.displayClientMessage(Component.translatable(key, args), false);
+        p.sendSystemMessage(Component.translatable(key, args));
     }
 
     private static void fail(ServerPlayer p, String key, Object... args) {
-        p.displayClientMessage(Component.translatable(key, args), false);
+        p.sendSystemMessage(Component.translatable(key, args));
     }
 
     // ==== persistence shapes ====

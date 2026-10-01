@@ -130,7 +130,7 @@ public final class EmoteStore {
             // makes registerDynamicTexture return a stale texture for the new file.
             Identifier tex = Minecraft.getInstance().getTextureManager()
                 .register("e33chat_emote_" + (textureSeq++),
-                    new DynamicTexture(dec.image()));
+                    new DynamicTexture(() -> "e33chat_emote", dec.image()));
             textures.put(f, tex);
             return tex;
         } catch (IOException e) {

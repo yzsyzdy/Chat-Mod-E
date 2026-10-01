@@ -15,7 +15,7 @@ import net.minecraft.client.gui.screens.InBedChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 
 @Mixin(Minecraft.class)
-public class MinecraftMixin {
+public class MinecraftClientMixin {
 
     @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
     private void onSetScreen(Screen screen, CallbackInfo ci) {
@@ -25,12 +25,12 @@ public class MinecraftMixin {
         if (screen instanceof InBedChatScreen) {
             ci.cancel();
             BedScreen.setScreenBeforeSleep(Minecraft.getInstance().screen);
-            Minecraft.getInstance().setScreen(new BedScreen());
+            Minecraft.getInstance().gui.setScreen(new BedScreen());
         } else if (screen instanceof ChatScreen chatScreen
                 && !(chatScreen instanceof ChatBubbleScreen)) {
             ci.cancel();
             String initial = getChatInitialText(chatScreen);
-            Minecraft.getInstance().setScreen(new ChatBubbleScreen(initial));
+            Minecraft.getInstance().gui.setScreen(new ChatBubbleScreen(initial));
         }
     }
 

@@ -178,7 +178,7 @@ public class ChatMessageStore {
         if (!myName.isEmpty() && (name.equals(myName) || name.contains(myName))) return true;
         if (player.connection != null) {
             for (var info : player.connection.getOnlinePlayers()) {
-                String profile = info.getProfile().getName();
+                String profile = info.getProfile().name();
                 if (!profile.isEmpty() && (name.equals(profile) || name.contains(profile))) return true;
                 var tab = info.getTabListDisplayName();
                 if (tab != null) {
@@ -810,12 +810,15 @@ public class ChatMessageStore {
             var team = player.getTeam();
             Component pfx = team.getPlayerPrefix();
             Component sfx = team.getPlayerSuffix();
-            ChatFormatting col = team.getColor();
+            // 26.2：队伍颜色不再是 ChatFormatting，而是 Optional<TeamColor>，
+            // 且 TeamColor 暴露的是 TextColor（textColor()）而不是格式枚举。
+            // 好在 Style 两组都吃：withStyle(ChatFormatting) 与 withStyle(TextColor) 都在。
+            net.minecraft.network.chat.TextColor col = team.getColor().map(tc -> tc.textColor()).orElse(null);
             boolean hasPfx = pfx != null && !pfx.getString().isEmpty();
             boolean hasSfx = sfx != null && !sfx.getString().isEmpty();
             if (hasPfx || hasSfx || col != null) {
                 MutableComponent name = Component.literal(player.getName().getString());
-                if (col != null) name = name.withStyle(col);
+                if (col != null) name = name.withColor(col);
                 MutableComponent out = Component.empty();
                 if (hasPfx) out.append(pfx);
                 out.append(name);

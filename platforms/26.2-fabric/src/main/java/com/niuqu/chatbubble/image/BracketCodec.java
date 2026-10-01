@@ -208,7 +208,8 @@ public final class BracketCodec {
 
     private static boolean isEasyBotCICodeHover(HoverEvent hover) {
         try {
-            if (hover.getAction() != HoverEvent.Action.SHOW_TEXT) return false;
+            // 26.2：HoverEvent 也是密封接口 + record（ShowText.value()），getAction()/getValue() 都没了。
+            if (!(hover instanceof HoverEvent.ShowText)) return false;
             String tooltip = hoverText(hover);
             return tooltip != null && BRACKET.matcher(tooltip).find();
         } catch (Throwable t) {
@@ -218,9 +219,9 @@ public final class BracketCodec {
 
     private static String hoverText(HoverEvent hover) {
         try {
-            Object value = hover.getValue(HoverEvent.Action.SHOW_TEXT);
-            if (value instanceof Component c) return c.getString();
-            if (value instanceof String s) return s;
+            if (hover instanceof HoverEvent.ShowText st && st.value() != null) {
+                return st.value().getString();
+            }
         } catch (Throwable t) {
             return null;
         }
@@ -229,10 +230,10 @@ public final class BracketCodec {
 
     private static boolean isChatImageHover(HoverEvent hover) {
         try {
-            if (String.valueOf(hover.getAction()).toLowerCase(java.util.Locale.ROOT).contains("chatimage")) return true;
+            if (String.valueOf(hover.action()).toLowerCase(java.util.Locale.ROOT).contains("chatimage")) return true;
             // Some ChatImage builds ship an Action whose toString() is not the
             // action id — fall back to the payload's class name.
-            Object value = hover.getValue(hover.getAction());
+            Object value = e33chatHoverValue(hover);
             return value != null
                 && value.getClass().getName().toLowerCase(java.util.Locale.ROOT).contains("chatimage");
         } catch (Throwable t) {
@@ -242,7 +243,7 @@ public final class BracketCodec {
 
     private static String readUrlFromHover(HoverEvent hover) {
         try {
-            Object value = hover.getValue(hover.getAction());
+            Object value = e33chatHoverValue(hover);
             // Custom actions carry whatever their codec decoded. ChatImage's
             // show_chatimage payload has been, across versions, a JSON object
             // {"url":...}, a plain code string, or (0.13+) a ChatImageCode
@@ -284,6 +285,18 @@ public final class BracketCodec {
             ImageRef ref = parseAttrs(m.group(2), m.group(1));
             if (ref != null) return ref.url();
         }
+        return null;
+    }
+
+    /**
+     * 26.2：HoverEvent 从「action + getValue(action)」改成密封接口 + record，载荷不再能按
+     * action 现取。这里把已知的 record 载荷取出来；非原版（例如 ChatImage 自定义 action）
+     * 的载荷拿不到，返回 null —— 调用方本来就把它当「可能为空的鸭子类型」处理。
+     */
+    private static Object e33chatHoverValue(HoverEvent hover) {
+        if (hover instanceof HoverEvent.ShowText st) return st.value();
+        if (hover instanceof HoverEvent.ShowItem si) return si.item();
+        if (hover instanceof HoverEvent.ShowEntity se) return se.type();
         return null;
     }
 }

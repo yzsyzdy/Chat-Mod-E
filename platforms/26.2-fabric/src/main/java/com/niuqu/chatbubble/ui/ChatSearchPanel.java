@@ -41,7 +41,7 @@ public class ChatSearchPanel {
 
         ColoredTextureRenderer.drawWithAlpha(g, UiTextureManager.rl(UiElement.CONTENT_BG),
             px, py, w, PANEL_H, alpha);
-        g.renderOutline(px, py, w, PANEL_H, ChatBubbleTheme.alphaBlend(c.divider(), a255));
+        g.outline(px, py, w, PANEL_H, ChatBubbleTheme.alphaBlend(c.divider(), a255));
 
         int inputX = px + 4;
         int inputY = py + 4;
@@ -64,11 +64,11 @@ public class ChatSearchPanel {
         boolean hoverInput = mouseX >= inputX && mouseX <= inputX + inputW
             && mouseY >= inputY && mouseY <= inputY + INPUT_H;
         if (hoverInput || searchInput.isFocused())
-            g.renderOutline(inputX, inputY, inputW, INPUT_H, ChatBubbleTheme.alphaBlend(c.textMuted(), a255));
+            g.outline(inputX, inputY, inputW, INPUT_H, ChatBubbleTheme.alphaBlend(c.textMuted(), a255));
 
         if (!counter.isEmpty()) {
             int cc = searchMatches.isEmpty() ? c.textMuted() : c.textSecondary();
-            g.drawString(font, Component.literal(counter), inputX + inputW - counterW, inputY + 3,
+            g.text(font, Component.literal(counter), inputX + inputW - counterW, inputY + 3,
                 ChatBubbleTheme.alphaBlend(cc, a255), false);
         }
 
@@ -81,7 +81,7 @@ public class ChatSearchPanel {
 
         if (searchInput.getValue().isEmpty()) {
             String ph = Component.translatable("e33chat.search.placeholder").getString();
-            g.drawString(font, Component.literal(ph), inputX + 2, inputY + 3, ChatBubbleTheme.alphaBlend(c.textMuted(), a255), false);
+            g.text(font, Component.literal(ph), inputX + 2, inputY + 3, ChatBubbleTheme.alphaBlend(c.textMuted(), a255), false);
         }
     }
 
