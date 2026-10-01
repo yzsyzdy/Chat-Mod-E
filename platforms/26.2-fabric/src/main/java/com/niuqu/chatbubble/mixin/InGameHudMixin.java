@@ -16,13 +16,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * {@code GameRenderer} also gates first-person hands/held items on it, so
  * opening the chat panel made the hand disappear. Cancelling the HUD render
  * here skips only the HUD layer.
+ *
+ * 【26.2 注】Gui.render(GuiGraphicsExtractor, DeltaTracker) 没了，HUD 的入口改成
+ * {@code extractRenderState(DeltaTracker, boolean, boolean)} —— 同样是「收集本帧要画的
+ * HUD 状态」，在这里 cancel 就等于整层 HUD 不画，语义与旧版一致。
  */
 @Mixin(Gui.class)
 public class InGameHudMixin {
 
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void e33chat$hideHudForTranslucentScreens(GuiGraphicsExtractor context, DeltaTracker tickCounter,
-                                                      CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
+    private void e33chat$hideHudForTranslucentScreens(DeltaTracker tickCounter, boolean renderHud,
+                                                      boolean renderScreen, CallbackInfo ci) {
         if (HudVisibility.shouldHideHud()) ci.cancel();
     }
 }

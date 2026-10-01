@@ -13,7 +13,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = CommandSuggestions.class, priority = 500)
 public class ChatInputSuggestorMixin {
 
-    @Inject(method = "renderUsage", at = @At("HEAD"), cancellable = true)
+    /**
+     * 【26.2 注】原来的 renderUsage(GuiGraphicsExtractor) 改名为
+     * {@code extractUsage(GuiGraphicsExtractor)}；方法名写错会让这个 mixin 在
+     * CommandSuggestions 加载时直接抛 InjectionError 把游戏带崩，所以名字必须对上。
+     */
+    @Inject(method = "extractUsage", at = @At("HEAD"), cancellable = true)
     private void onRenderMessages(GuiGraphicsExtractor context, CallbackInfo ci) {
         if (Minecraft.getInstance().gui.screen() instanceof ChatBubbleScreen) {
             ci.cancel();
@@ -21,7 +26,7 @@ public class ChatInputSuggestorMixin {
     }
 
     @Inject(method = "showSuggestions(Z)V", at = @At("TAIL"))
-    private void afterShow(CallbackInfo ci) {
+    private void afterShow(boolean forceShow, CallbackInfo ci) {
         if (!(Minecraft.getInstance().gui.screen() instanceof ChatBubbleScreen)) return;
         CommandSuggestions.SuggestionsList window = ((ChatInputSuggestorAccessor) this).getWindow();
         if (window == null) return;

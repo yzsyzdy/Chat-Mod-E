@@ -26,8 +26,15 @@ public final class NativeFileDialog {
         KeyMapping.releaseAll();
         Minecraft mc = Minecraft.getInstance();
         // MC keeps thinking the button is held while the dialog grabs input;
-        // clear it so release state restores cleanly after the dialog closes
-        if (mc.mouseHandler != null) ((com.niuqu.chatbubble.mixin.MouseHandlerAccessor) mc.mouseHandler).e33chat$setActiveButton(0);
+        // clear it so release state restores cleanly after the dialog closes.
+        // 26.2：按下的状态由三个 boolean 字段表示（activeButton 变成了 MouseButtonInfo 记录），
+        // 所以这里三个都清掉，而不是旧版写一个 activeButton=0。
+        if (mc.mouseHandler != null) {
+            var accessor = (com.niuqu.chatbubble.mixin.MouseHandlerAccessor) mc.mouseHandler;
+            accessor.e33chat$setLeftPressed(false);
+            accessor.e33chat$setMiddlePressed(false);
+            accessor.e33chat$setRightPressed(false);
+        }
 
         Thread t = new Thread(() -> {
             AtomicReference<File> picked = new AtomicReference<>();
