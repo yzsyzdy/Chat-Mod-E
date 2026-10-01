@@ -80,7 +80,7 @@ public final class RasterImageDecoder {
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 int c = argb[y * w + x];
-                out.setPixelRGBA(x, y, (c & 0xFF00FF00) | ((c & 0x00FF0000) >> 16) | ((c & 0x000000FF) << 16));
+                out.setPixelABGR(x, y, (c & 0xFF00FF00) | ((c & 0x00FF0000) >> 16) | ((c & 0x000000FF) << 16));
             }
         }
         return out;

@@ -612,7 +612,7 @@ public class ServerConfigScreen extends Screen {
                 ly += CAT_ROW_H;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(e33event, e33double);
     }
 
     @Override
@@ -638,7 +638,7 @@ public class ServerConfigScreen extends Screen {
             treePane.dragTo((int) mouseY, tTrackH(), tTotalH(), calcTreeMaxScroll(), 80);
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(e33event, deltaX, deltaY);
     }
 
     @Override
@@ -646,15 +646,14 @@ public class ServerConfigScreen extends Screen {
         { double mouseX = e33event.x(); double mouseY = e33event.y(); int button = e33event.button();
         rightPane.dragEnd();
         treePane.dragEnd();
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(e33event);
     }
 
     // ===== 渲染 =====
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, UiTextureManager.rl(UiElement.CONFIG_BG, ChatBubbleTheme.DARK),
-            0, 0, width, height, 0f, 0f, 16, 16, 16, 16);
+        g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, UiTextureManager.rl(UiElement.CONFIG_BG, ChatBubbleTheme.DARK), 0, 0, 0f, 0f, width, height, 16, 16, 16, 16);
         tickAnims();
         g.text(font, title, width / 2 - font.width(title) / 2, 14, c().configTitle(), false);
 
@@ -667,8 +666,7 @@ public class ServerConfigScreen extends Screen {
             boolean sel = i == selectedCat;
             boolean hover = mouseX >= CAT_X && mouseX <= CAT_X + CAT_W && mouseY >= ly && mouseY < ly + CAT_ROW_H;
             if (sel || hover)
-                g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, UiTextureManager.rl(UiElement.HOVER_BG, ChatBubbleTheme.DARK),
-                    CAT_X, ly, CAT_W, CAT_ROW_H, 0f, 0f, 16, 16, 16, 16);
+                g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, UiTextureManager.rl(UiElement.HOVER_BG, ChatBubbleTheme.DARK), CAT_X, ly, 0f, 0f, CAT_W, CAT_ROW_H, 16, 16, 16, 16);
             if (sel)
                 g.fill(CAT_X, ly, CAT_X + 2, ly + CAT_ROW_H, c().configTitle());
             g.text(font, Component.translatable(CAT_KEYS[i]), CAT_X + 18, ly + (CAT_ROW_H - 8) / 2,
@@ -680,8 +678,7 @@ public class ServerConfigScreen extends Screen {
             mouseX, mouseY, treePane.dragging());
 
         // 分类与选项区分隔线
-        g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, UiTextureManager.rl(UiElement.DIVIDER, ChatBubbleTheme.DARK),
-            dividerX(), START_Y - 6, 1, viewBottom() - (START_Y - 6), 0f, 0f, 16, 16, 16, 16);
+        g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, UiTextureManager.rl(UiElement.DIVIDER, ChatBubbleTheme.DARK), dividerX(), START_Y - 6, 0f, 0f, 1, viewBottom() - (START_Y - 6), 16, 16, 16, 16);
 
         // 右区选项行，硬裁剪到视口；普通行 label 垂直居中对齐按钮（y+6），教程小行顶部对齐（y+2）
         g.enableScissor(optLabelX() - 4, viewTop(), width, viewBottom());
@@ -694,8 +691,7 @@ public class ServerConfigScreen extends Screen {
                 int lineX = optLabelX() + font.width(label) + 8;
                 int lineEnd = optLabelX() + optAreaW() + 4;
                 if (lineX < lineEnd)
-                    g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, UiTextureManager.rl(UiElement.DIVIDER, ChatBubbleTheme.DARK),
-                        lineX, y + 15, lineEnd - lineX, 1, 0f, 0f, 16, 16, 16, 16);
+                    g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, UiTextureManager.rl(UiElement.DIVIDER, ChatBubbleTheme.DARK), lineX, y + 15, 0f, 0f, lineEnd - lineX, 1, 16, 16, 16, 16);
                 y += row.height();
                 continue;
             }
@@ -734,7 +730,7 @@ public class ServerConfigScreen extends Screen {
         exitBtn.visible = changed > 0;
         saveBtn.visible = changed > 0;
 
-        super.render(g, mouseX, mouseY, partialTick);
+        super.extractRenderState(g, mouseX, mouseY, partialTick);
 
         if (changed > 0)
             g.text(font, Component.translatable("e33chat.config.changed", changed),

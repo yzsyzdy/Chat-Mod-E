@@ -399,7 +399,7 @@ class ChatMessageStoreTest {
         var back = ChatMessageStore.fromLine(ChatMessageStore.toLine(msg));
         assertNotNull(back);
         assertEquals("Steve", back.senderName().getString());
-        assertEquals(net.minecraft.ChatFormatting.AQUA.getColor(),
+        assertEquals(net.minecraft.net.minecraft.network.chat.TextColor.AQUA,
             back.senderName().getStyle().getColor().getRgb());
     }
 
@@ -445,9 +445,9 @@ class ChatMessageStoreTest {
         var c = ChatMessageStore.parseStyledText("§6[称号]§bE33EPUS");
         // getString() is plain text; the colors live in the styled siblings
         assertEquals("[称号]E33EPUS", c.getString());
-        assertEquals(net.minecraft.ChatFormatting.GOLD.getColor(),
+        assertEquals(net.minecraft.net.minecraft.network.chat.TextColor.GOLD,
             c.getSiblings().get(0).getStyle().getColor().getRgb());
-        assertEquals(net.minecraft.ChatFormatting.AQUA.getColor(),
+        assertEquals(net.minecraft.net.minecraft.network.chat.TextColor.AQUA,
             c.getSiblings().get(1).getStyle().getColor().getRgb());
     }
 

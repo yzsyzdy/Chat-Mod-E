@@ -15,14 +15,14 @@ public class ChatInputSuggestorMixin {
 
     @Inject(method = "renderUsage", at = @At("HEAD"), cancellable = true)
     private void onRenderMessages(GuiGraphicsExtractor context, CallbackInfo ci) {
-        if (Minecraft.getInstance().screen instanceof ChatBubbleScreen) {
+        if (Minecraft.getInstance().gui.screen() instanceof ChatBubbleScreen) {
             ci.cancel();
         }
     }
 
     @Inject(method = "showSuggestions(Z)V", at = @At("TAIL"))
     private void afterShow(CallbackInfo ci) {
-        if (!(Minecraft.getInstance().screen instanceof ChatBubbleScreen)) return;
+        if (!(Minecraft.getInstance().gui.screen() instanceof ChatBubbleScreen)) return;
         CommandSuggestions.SuggestionsList window = ((ChatInputSuggestorAccessor) this).getWindow();
         if (window == null) return;
         Rect2i area = ((SuggestionWindowAccessor) window).getArea();

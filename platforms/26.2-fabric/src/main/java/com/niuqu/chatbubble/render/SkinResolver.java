@@ -62,7 +62,7 @@ public final class SkinResolver {
         if (client.getConnection() != null && uuid != null && !uuid.equals(NIL_UUID)) {
             PlayerInfo info = client.getConnection().getPlayerInfo(uuid);
             if (info != null) {
-                Identifier tex = info.getSkin().texturePath();
+                Identifier tex = info.getSkin().body().texturePath();
                 rememberSkin(uuid, name, tex);
                 return tex;
             }

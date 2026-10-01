@@ -128,9 +128,11 @@ public final class EmoteStore {
             // NativeImage ownership transfers to the texture; never close it here.
             // Monotonic id: textures.size() reuses ids after removals, which
             // makes registerDynamicTexture return a stale texture for the new file.
-            Identifier tex = Minecraft.getInstance().getTextureManager()
-                .register("e33chat_emote_" + (textureSeq++),
-                    new DynamicTexture(() -> "e33chat_emote", dec.image()));
+            Identifier tex = net.minecraft.resources.Identifier.fromNamespaceAndPath(
+                "e33chat", "emote_" + (textureSeq++));
+            // 26.2：TextureManager.register(id, texture) 返回 void（不再回传 id）。
+            Minecraft.getInstance().getTextureManager()
+                .register(tex, new DynamicTexture(() -> "e33chat_emote", dec.image()));
             textures.put(f, tex);
             return tex;
         } catch (IOException e) {

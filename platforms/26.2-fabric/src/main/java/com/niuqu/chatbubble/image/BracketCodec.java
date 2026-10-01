@@ -296,7 +296,7 @@ public final class BracketCodec {
     private static Object e33chatHoverValue(HoverEvent hover) {
         if (hover instanceof HoverEvent.ShowText st) return st.value();
         if (hover instanceof HoverEvent.ShowItem si) return si.item();
-        if (hover instanceof HoverEvent.ShowEntity se) return se.type();
+        if (hover instanceof HoverEvent.ShowEntity se) return se.entity();
         return null;
     }
 }

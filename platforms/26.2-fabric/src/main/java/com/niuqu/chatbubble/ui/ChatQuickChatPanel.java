@@ -179,7 +179,7 @@ public class ChatQuickChatPanel {
             }
         }
 
-        if (input.mouseClicked(mx, my, 0))
+        if (input.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mx, my, new net.minecraft.client.input.MouseButtonInfo(0, 0)), false))
             return -2;
         return -1;
     }

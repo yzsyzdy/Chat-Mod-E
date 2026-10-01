@@ -761,15 +761,15 @@ public class ChatBubbleScreen extends ChatScreen {
         if (style == AnimationStyle.ZOOM) {
             g.pose().pushMatrix();
             float s = 0.85f + 0.15f * Animation.easeOutBack(alpha);
-            g.pose().translate(width / 2f, height / 2f, 0);
-            g.pose().scale(s, s, 1f);
-            g.pose().translate(-width / 2f, -height / 2f, 0);
+            g.pose().translate(width / 2f, height / 2f);
+            g.pose().scale(s, s);
+            g.pose().translate(-width / 2f, -height / 2f);
             render.run();
             g.pose().popMatrix();
         } else if (style == AnimationStyle.SLIDE) {
             // SLIDE: rise up from below while fading in; close sinks back down
             g.pose().pushMatrix();
-            g.pose().translate(0, (1f - alpha) * 10f, 0);
+            g.pose().translate(0, (1f - alpha) * 10f);
             render.run();
             g.pose().popMatrix();
         } else {
@@ -874,7 +874,7 @@ public class ChatBubbleScreen extends ChatScreen {
             }
         }
 
-        if (commandSuggestions != null && commandSuggestions.keyPressed(keyCode, scanCode, modifiers))
+        if (commandSuggestions != null && commandSuggestions.keyPressed(event))
             return true;
         if (keyCode == 256) { onClose(); return true; }
         if (groupCreateInput != null && groupCreateInput.isFocused() && (keyCode == 257 || keyCode == 335)) {
@@ -908,7 +908,7 @@ public class ChatBubbleScreen extends ChatScreen {
         // 不调 super.keyPressed（= ChatScreen，内部访问 package-private chatInputSuggestor = null → NPE）。
         // self 实现 Screen.keyPressed 等价分发：先给 focused widget（chatField TextFieldWidget 处理
         // backspace/删除/左右/Home/End/Ctrl+A/C/V/X），再 Tab/箭头焦点导航。
-        if (this.getFocused() != null && this.getFocused().keyPressed(keyCode, scanCode, modifiers))
+        if (this.getFocused() != null && this.getFocused().keyPressed(event))
             return true;
         net.minecraft.client.gui.navigation.FocusNavigationEvent nav = switch (keyCode) {
             case 258 -> new net.minecraft.client.gui.navigation.FocusNavigationEvent.TabNavigation(!minecraft.hasShiftDown());
@@ -1006,7 +1006,7 @@ public class ChatBubbleScreen extends ChatScreen {
             int searchY = 2;
             int searchH = SIDEBAR_SEARCH_H;
             if (mouseY >= searchY && mouseY <= searchY + searchH) {
-                boolean handled = sidebarSearchBox.mouseClicked(origX, mouseY, button);
+                boolean handled = sidebarSearchBox.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(origX, mouseY, new net.minecraft.client.input.MouseButtonInfo(button, 0)), false);
                 setFocused(sidebarSearchBox); input.setFocused(false);
                 if (handled && button == 0) {
                     setDragging(true);
@@ -1095,7 +1095,7 @@ public class ChatBubbleScreen extends ChatScreen {
                 + " panelOffset=" + currentPanelOffset() + " sliding=" + isPanelSliding();
             com.niuqu.chatbubble.store.ChatMessageStore.debugLog(() -> _diag);
         }
-        if (commandSuggestions != null && commandSuggestions.mouseClicked((int) mouseX, (int) mouseY, button))
+        if (commandSuggestions != null && commandSuggestions.mouseClicked(new net.minecraft.client.input.MouseButtonEvent((int) mouseX, (int) mouseY, new net.minecraft.client.input.MouseButtonInfo(button, 0))))
             return true;
 
         if (button == 0) {
@@ -1161,7 +1161,7 @@ public class ChatBubbleScreen extends ChatScreen {
                     quickChatInput.setVisible(true);
                     setFocused(quickChatInput);
                     input.setFocused(false);
-                    boolean handled = quickChatInput.mouseClicked(mouseX, mouseY, button);
+                    boolean handled = quickChatInput.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseY, new net.minecraft.client.input.MouseButtonInfo(button, 0)), false);
                     if (handled && button == 0) {
                         setDragging(true);
                         inputDragTarget = quickChatInput;
@@ -1180,7 +1180,7 @@ public class ChatBubbleScreen extends ChatScreen {
             }
             if (searchPanel.visible) {
                 if (searchPanel.isClickOnPanel((int) mouseX, (int) mouseY, panelX, panelW, barTop)) {
-                    boolean handled = searchInput.mouseClicked(mouseX, mouseY, button);
+                    boolean handled = searchInput.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseY, new net.minecraft.client.input.MouseButtonInfo(button, 0)), false);
                     setFocused(searchInput);
                     if (handled && button == 0) {
                         setDragging(true);
@@ -1256,11 +1256,11 @@ public class ChatBubbleScreen extends ChatScreen {
                     // hand http(s) to the vanilla handler.
                     String clickUrl = ou.uri() != null ? ou.uri().toString() : null;
                     if (clickUrl != null && (clickUrl.startsWith("http://") || clickUrl.startsWith("https://"))) {
-                        handleComponentClicked(style);
+                        net.minecraft.client.gui.screens.Screen.defaultHandleClickEvent(style.getClickEvent(), minecraft, this);
                     }
                     return true;
                 }
-                handleComponentClicked(style); return true;
+                net.minecraft.client.gui.screens.Screen.defaultHandleClickEvent(style.getClickEvent(), minecraft, this); return true;
             }
         }
 
@@ -1332,7 +1332,7 @@ public class ChatBubbleScreen extends ChatScreen {
             }
         }
 
-        boolean chatHandled = this.input.mouseClicked(origX, mouseY, button);
+        boolean chatHandled = this.input.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(origX, mouseY, new net.minecraft.client.input.MouseButtonInfo(button, 0)), false);
         if (chatHandled) {
             setFocused(this.input);
             // We bypass Screen.mouseClicked -> super.mouseClicked, so the container
@@ -1393,14 +1393,14 @@ public class ChatBubbleScreen extends ChatScreen {
             }
             suppressInputChange = true;
             try {
-                inputDragTarget.onClick(mx, mouseY);
+                inputDragTarget.onClick(new net.minecraft.client.input.MouseButtonEvent(mx, mouseY, new net.minecraft.client.input.MouseButtonInfo(0, 0)), false);
                 inputDragTarget.setHighlightPos(inputDragAnchor);
             } finally {
                 suppressInputChange = false;
             }
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
@@ -1423,7 +1423,7 @@ public class ChatBubbleScreen extends ChatScreen {
             inputDragAnchor = -1;
         }
         if (scrollbarDragging) { scrollbarDragging = false; return true; }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     private boolean handleIconClick(int mx, int my) {
@@ -1606,12 +1606,12 @@ public class ChatBubbleScreen extends ChatScreen {
         if (zoom) panelScale = 0.8f + 0.2f * Animation.easeOutBack(anim);
 
         g.pose().pushMatrix();
-        g.pose().translate(panelOffset, 0, 0);
+        g.pose().translate(panelOffset, 0);
         if (zoom) {
             float cx = panelX + panelW / 2f;
-            g.pose().translate(cx, height / 2f, 0);
-            g.pose().scale(panelScale, panelScale, 1f);
-            g.pose().translate(-cx, -height / 2f, 0);
+            g.pose().translate(cx, height / 2f);
+            g.pose().scale(panelScale, panelScale);
+            g.pose().translate(-cx, -height / 2f);
         }
 
         float panelOpacity = ChatBubbleClientSetup.config().panelOpacity() / 100f * anim;
@@ -1638,12 +1638,16 @@ public class ChatBubbleScreen extends ChatScreen {
         // 上下栏背景只跟开合动画（fade 终点 1.0 不透明），不乘 PANEL_OPACITY（2.3.7 起永久半透明回归）
         renderTitleBar(g, mouseX, mouseY, getBarAlpha());
         renderMessages(g, mouseX, mouseY);
+        // 26.2：GuiGraphicsExtractor 没有 renderComponentHoverEffect 了（那套 tooltip 渲染
+        // 被换成 setTooltipForNextFrame 系列，且不再接受 Style）。这里退化成把 hover 文本
+        // 交给新的 tooltip 入口；hover 事件类型不止 ShowText，非文本的就先不显示。
         Style hovered = getHoveredStyle(mouseX, mouseY);
-        if (hovered != null && hovered.getHoverEvent() != null) {
-            g.renderComponentHoverEffect(font, hovered, mouseX, mouseY);
+        if (hovered != null && hovered.getHoverEvent() instanceof net.minecraft.network.chat.HoverEvent.ShowText st
+                && st.value() != null) {
+            g.setTooltipForNextFrame(font, st.value(), mouseX, mouseY);
         }
 
-        g.pose().translate(0, 0, 50);
+        g.pose().translate(0, 0);
         renderNotificationBar(g, mouseX, mouseY);
         renderReplyBar(g, mouseX, mouseY);
         renderContextMenu(g, mouseX, mouseY);
@@ -1654,7 +1658,7 @@ public class ChatBubbleScreen extends ChatScreen {
         // 弹层面板（设置/表情/快捷/搜索）画在底栏之上，z 高一层——侧边栏同 z 后画
         // 会盖住它们，提升弹层 z 到侧边栏之上避免遮挡
         g.pose().pushMatrix();
-        g.pose().translate(0, 0, 100);
+        g.pose().translate(0, 0);
         renderPopupWithAnim(g, settingsAnimStart, settingsCloseStart, a -> () -> settingsMenu.render(g, mouseX, mouseY, font, c(), panelX, panelW, barTop, ChatBubbleScreen::iconTex, a));
         renderPopupWithAnim(g, emojiAnimStart, emojiCloseStart, a -> () -> emojiPanel.render(g, mouseX, mouseY, font, c(), panelX, panelW, barTop, ICON_S, PAD, a));
         renderPopupWithAnim(g, quickAnimStart, quickCloseStart, a -> () -> quickChatPanel.render(g, mouseX, mouseY, font, c(), panelX, panelW, barTop, quickChatInput, a));
@@ -1663,9 +1667,9 @@ public class ChatBubbleScreen extends ChatScreen {
         // 输入框 widget 在 z=50 的 children 循环渲染，会被这里 z=100 的不透明面板背景盖住
         // （5bb740e 弹层 z 提升引入）——面板打开时在同 z 重画一次，文字/光标才可见。
         // widget 无背景（drawsBackground=false），只画文字/光标，不遮挡面板内容
-        if (quickChatPanel.visible && quickChatInput != null) quickChatInput.render(g, mouseX, mouseY, delta);
-        if (searchPanel.visible && searchInput != null) searchInput.render(g, mouseX, mouseY, delta);
-        if (groupBrowser.visible && groupCreateInput != null) groupCreateInput.render(g, mouseX, mouseY, delta);
+        if (quickChatPanel.visible && quickChatInput != null) quickChatInput.extractRenderState(g, mouseX, mouseY, delta);
+        if (searchPanel.visible && searchInput != null) searchInput.extractRenderState(g, mouseX, mouseY, delta);
+        if (groupBrowser.visible && groupCreateInput != null) groupCreateInput.extractRenderState(g, mouseX, mouseY, delta);
         g.pose().popMatrix();
 
         g.pose().popMatrix();
@@ -1675,9 +1679,9 @@ public class ChatBubbleScreen extends ChatScreen {
             // ZOOM: the sidebar scales with the panel around the panel center
             if (zoom) {
                 float cx = panelX + panelW / 2f;
-                g.pose().translate(cx, height / 2f, 0);
-                g.pose().scale(panelScale, panelScale, 1f);
-                g.pose().translate(-cx, -height / 2f, 0);
+                g.pose().translate(cx, height / 2f);
+                g.pose().scale(panelScale, panelScale);
+                g.pose().translate(-cx, -height / 2f);
             }
             // Fade/zoom-in-place applies only to the panel's own open/close
             // animation; the hamburger toggle always slides.
@@ -1685,7 +1689,7 @@ public class ChatBubbleScreen extends ChatScreen {
             int sidebarOffset = (closing && !fadeSidebar)
                 ? (int) ((getAnimProgress() - 1.0f) * SIDEBAR_W)
                 : (fadeSidebar ? 0 : getSidebarScreenX());
-            g.pose().translate(sidebarOffset, 0, 50);
+            g.pose().translate(sidebarOffset, 0);
             // Per-element alpha (vanilla drawTexture ignores setShaderColor; the
             // sidebar fades its own textures through the alpha path)
             renderSidebar(g, mouseX - sidebarOffset, mouseY, fadeSidebar ? getAnimProgress() : 1f);
@@ -1694,16 +1698,16 @@ public class ChatBubbleScreen extends ChatScreen {
         }
 
         g.pose().pushMatrix();
-        g.pose().translate(0, 0, 50);
+        g.pose().translate(0, 0);
         input.setX(inputX + panelOffset);
         // 不调 super.render（ChatScreen.render 访问 package-private chatInputSuggestor，
         // 跨包无法初始化）；复制 Screen.render 的 widgets 遍历渲染
         for (net.minecraft.client.gui.components.events.GuiEventListener w : this.children()) {
-            if (w instanceof net.minecraft.client.gui.components.Renderable d) d.render(g, mouseX, mouseY, delta);
+            if (w instanceof net.minecraft.client.gui.components.Renderable d) d.extractRenderState(g, mouseX, mouseY, delta);
         }
         // 建议框定位基于 chatField.getScreenX()（屏幕坐标），与 input 同坐标空间渲染
         g.enableScissor(panelX, 0, panelX + panelW, height);
-        if (commandSuggestions != null) commandSuggestions.render(g, mouseX, mouseY);
+        if (commandSuggestions != null) commandSuggestions.extractRenderState(g, mouseX, mouseY);
         g.disableScissor();
         g.pose().popMatrix();
 
@@ -2008,7 +2012,7 @@ public class ChatBubbleScreen extends ChatScreen {
                 }
             }
             g.pose().pushMatrix();
-            g.pose().translate(mDx, mDy, 0);
+            g.pose().translate(mDx, mDy);
             if (mScale != 1f) {
                 // Bubble top-left for the ZOOM pivot (mirrors renderBubble's layout incl. bubble_size)
                 float bs = Appearance.bubbleScale(font.lineHeight);
@@ -2021,9 +2025,9 @@ public class ChatBubbleScreen extends ChatScreen {
                     ? panelX + panelW - PAD - Appearance.avatarSize() - 4 - zBubbleW
                     : panelX + PAD + Appearance.avatarSize() + 4;
                 int zBubbleY = screenY + (grouped ? 0 : NAME_H);
-                g.pose().translate(zBubbleX + zBubbleW / 2f, zBubbleY, 0);
-                g.pose().scale(mScale, mScale, 1f);
-                g.pose().translate(-(zBubbleX + zBubbleW / 2f), -zBubbleY, 0);
+                g.pose().translate(zBubbleX + zBubbleW / 2f, zBubbleY);
+                g.pose().scale(mScale, mScale);
+                g.pose().translate(-(zBubbleX + zBubbleW / 2f), -zBubbleY);
             }
             renderBubble(g, msg, fullIdx, screenY, mouseX, mouseY, mAlpha, showAvatar);
             g.pose().popMatrix();
@@ -2182,10 +2186,10 @@ public class ChatBubbleScreen extends ChatScreen {
             } else if (click instanceof ClickEvent.OpenUrl ou) {
                 String clickUrl = ou.uri() != null ? ou.uri().toString() : null;
                 if (clickUrl != null && (clickUrl.startsWith("http://") || clickUrl.startsWith("https://"))) {
-                    handleComponentClicked(style);
+                    net.minecraft.client.gui.screens.Screen.defaultHandleClickEvent(style.getClickEvent(), minecraft, this);
                 }
             } else {
-                handleComponentClicked(style);
+                net.minecraft.client.gui.screens.Screen.defaultHandleClickEvent(style.getClickEvent(), minecraft, this);
             }
         }
     }
@@ -2422,8 +2426,8 @@ public class ChatBubbleScreen extends ChatScreen {
             int beforeText = textSpans.size();
             int beforeLine = clickableSpans.size();
             g.pose().pushMatrix();
-            g.pose().translate(textSX, textSY, 0);
-            if (s != 1f) g.pose().scale(s, s, 1f);
+            g.pose().translate(textSX, textSY);
+            if (s != 1f) g.pose().scale(s, s);
             renderLineWithClicks(g, lines.get(li), 0, 0, fgA, fbP,
                 index, li, TextSpan.KIND_CONTENT, s, bg, textSelection);
             g.pose().popMatrix();
@@ -2458,8 +2462,8 @@ public class ChatBubbleScreen extends ChatScreen {
             int labelX, labelY = bubbleY + (bubbleH - (int)(font.lineHeight * s)) / 2;
             if (own) { labelX = bubbleX - labelW - 3; } else { labelX = bubbleX + bubbleW + 3; }
             g.pose().pushMatrix();
-            g.pose().translate(labelX, labelY, 0);
-            if (s != 1f) g.pose().scale(s, s, 1f);
+            g.pose().translate(labelX, labelY);
+            if (s != 1f) g.pose().scale(s, s);
             g.text(font, label, 0, 0, ChatBubbleTheme.alphaBlend(c().duplicateLabel(), (int)(255 * alpha)), false);
             g.pose().popMatrix();
         }
@@ -2481,8 +2485,8 @@ public class ChatBubbleScreen extends ChatScreen {
             RoundRectRenderer.fill(g, quoteX, quoteY, quoteX + quoteW, quoteY + quoteH, ChatBubbleClientSetup.config().bubbleCornerRadius() * s, ChatBubbleTheme.alphaBlend(c().contextHover(), (int)(255 * alpha)));
             int beforeText = textSpans.size();
             g.pose().pushMatrix();
-            g.pose().translate(quoteX + (int)(4 * s), quoteY + (int)(2 * s), 0);
-            if (s != 1f) g.pose().scale(s, s, 1f);
+            g.pose().translate(quoteX + (int)(4 * s), quoteY + (int)(2 * s));
+            if (s != 1f) g.pose().scale(s, s);
             renderLineWithClicks(g, Component.literal(quoteDisplay).getVisualOrderText(), 0, 0,
                 ChatBubbleTheme.alphaBlend(c().textSecondary(), (int) (255 * alpha)), null,
                 index, 0, TextSpan.KIND_QUOTE, s, c().contextHover(), textSelection);
@@ -2575,13 +2579,11 @@ public class ChatBubbleScreen extends ChatScreen {
             }
             int imgX = own ? (avatarX - UiTokens.AVATAR_NAME_GAP - w) : (avatarX + Appearance.avatarSize() + UiTokens.AVATAR_GAP);
             if (animatedFrame != null) {
-                g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, animatedFrame.texture(), imgX, y, w, h,
-                    0, 0, animatedFrame.width(), animatedFrame.height(), animatedFrame.width(), animatedFrame.height());
+                g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, animatedFrame.texture(), imgX, y, 0, 0, w, h, animatedFrame.width(), animatedFrame.height(), animatedFrame.width(), animatedFrame.height());
             } else {
                 ImageEntry entry = animatedPending(animated) ? null : ImageLoader.getOrLoad(ref.url());
                 if (entry != null && entry.state() == ImageEntry.State.LOADED && entry.textureId() != null) {
-                    g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, entry.textureId(), imgX, y, w, h,
-                        0, 0, entry.width(), entry.height(), entry.width(), entry.height());
+                    g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, entry.textureId(), imgX, y, 0, 0, w, h, entry.width(), entry.height(), entry.width(), entry.height());
                 } else {
                     boolean limited = entry != null && entry.state() == ImageEntry.State.FAILED
                         && entry.failure() != null && entry.failure().contains("rate limited");
@@ -2682,13 +2684,11 @@ public class ChatBubbleScreen extends ChatScreen {
         }
         int emoteX = own ? (avatarX - UiTokens.AVATAR_NAME_GAP - w) : (avatarX + Appearance.avatarSize() + UiTokens.AVATAR_GAP);
         if (animatedFrame != null) {
-            g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, animatedFrame.texture(), emoteX, emoteY, w, h,
-                0, 0, animatedFrame.width(), animatedFrame.height(), animatedFrame.width(), animatedFrame.height());
+            g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, animatedFrame.texture(), emoteX, emoteY, 0, 0, w, h, animatedFrame.width(), animatedFrame.height(), animatedFrame.width(), animatedFrame.height());
         } else {
             ImageEntry entry = animatedPending(animated) ? null : ImageLoader.getOrLoad(ref.url());
             if (entry != null && entry.state() == ImageEntry.State.LOADED && entry.textureId() != null) {
-                g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, entry.textureId(), emoteX, emoteY, w, h,
-                    0, 0, entry.width(), entry.height(), entry.width(), entry.height());
+                g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, entry.textureId(), emoteX, emoteY, 0, 0, w, h, entry.width(), entry.height(), entry.width(), entry.height());
             } else {
                 boolean limited = entry != null && entry.state() == ImageEntry.State.FAILED
                     && entry.failure() != null && entry.failure().contains("rate limited");
@@ -3235,7 +3235,7 @@ public class ChatBubbleScreen extends ChatScreen {
         if (size < 16) {
             // 图标纹理约定 16x16（内容居中，四周 1px 透明边，内容占 14x14）。采样内容区
             // (偏移1,1) 完整 14x14 绘制——窗口取 size 会切掉内容右/下 2px（copy 右页被切）。
-            g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, tex, x, y, size, size, 1.0F, 1.0F, 14, 14, 16, 16);
+            g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, tex, x, y, 1.0F, 1.0F, size, size, 14, 14, 16, 16);
         } else {
             g.blit(tex, x, y, 0, 0, size, size, size, size);
         }
@@ -3535,9 +3535,10 @@ public class ChatBubbleScreen extends ChatScreen {
 
     // 父类 resize 访问 package-private chatInputSuggestor（跨包 null）→ 自实现
     @Override
-    public void resize(Minecraft client, int width, int height) {
+    public void resize(int width, int height) {
         String cur = input.getValue();
-        this.init(client, width, height);
+        // 26.2：Screen 的初始化入口是 init(int,int)（不再带 Minecraft 参数）。
+        this.init(width, height);
         input.setValue(cur);
     }
 

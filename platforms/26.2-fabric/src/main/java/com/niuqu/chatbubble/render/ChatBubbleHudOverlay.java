@@ -42,10 +42,11 @@ public class ChatBubbleHudOverlay {
         // F1 hides through vanilla hudHidden (InGameHud is skipped entirely).
         // F3 does not toggle hudHidden, so mirror the same "no E33Chat HUD while
         // the debug screen is open" behavior here.
-        if (mc.gui.getDebugOverlay().showDebugScreen()) return;
+        if (mc.getDebugOverlay().showDebugScreen()) return;
 
         g.pose().pushMatrix();
-        g.pose().translate(0, 0, 300);
+        // 26.2：pose 是 2D 的 Matrix3x2fStack，translate 只有两个分量（没有 z 分层）。
+        g.pose().translate(0f, 0f);
 
         MentionNotificationBanner.INSTANCE.tick();
         if (mc.gui.screen() == null) {
@@ -86,7 +87,7 @@ public class ChatBubbleHudOverlay {
     public static void renderBannerForScreen(GuiGraphicsExtractor g) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options == null) return;
-        if (mc.gui.getDebugOverlay().showDebugScreen()) return;
+        if (mc.getDebugOverlay().showDebugScreen()) return;
         if (mc.gui.screen() instanceof ChatBubbleScreen) {
             MentionNotificationBanner.INSTANCE.render(g,
                 mc.getWindow().getGuiScaledWidth(),
@@ -105,12 +106,13 @@ public class ChatBubbleHudOverlay {
 
 
     private static void drawIcon(GuiGraphicsExtractor g, int x, int y) {
-        // getTexture 无缓存时自动 new ResourceTexture 懒加载（资源包可覆盖，F3+T 即时生效）
-        g.blit(chatIconTex(), x, y, 0.0F, 0.0F, ICON_S, ICON_S, ICON_S, ICON_S);
+        // 26.2：blit 自行解析纹理与管线。带 UV 的这版重载参数序是
+        // (pipeline, tex, x, y, u, v, w, h, regionW, regionH, texW, texH)。
+        g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, chatIconTex(), x, y, 0.0F, 0.0F, ICON_S, ICON_S, ICON_S, ICON_S, ICON_S, ICON_S);
     }
 
     private static void drawScaledTip(GuiGraphicsExtractor g, int x, int y, int disp) {
         Identifier tex = ChatBubbleScreen.iconTex("private_tip");
-        g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, tex, x, y, disp, disp, (float) SRC_U, (float) SRC_V, SRC_S, SRC_S, 16, 16);
+        g.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, tex, x, y, (float) SRC_U, (float) SRC_V, disp, disp, SRC_S, SRC_S, 16, 16);
     }
 }

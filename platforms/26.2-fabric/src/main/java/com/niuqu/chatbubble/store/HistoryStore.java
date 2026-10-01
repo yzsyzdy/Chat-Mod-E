@@ -103,8 +103,8 @@ public final class HistoryStore {
         obj.put("uuid", msg.senderUUID() != null ? msg.senderUUID().toString() : "");
         String senderJson = null, contentJson = null;
         try {
-            senderJson = Component.Serializer.toJson(msg.senderName(), registries());
-            contentJson = Component.Serializer.toJson(msg.content(), registries());
+            senderJson = e33json(msg.senderName());
+            contentJson = e33json(msg.content());
         } catch (Throwable ignored) {
             // Component codecs unavailable (headless test env / broken registries):
             // fall back to plain-text fields; styled fields are omitted.
@@ -194,7 +194,7 @@ public final class HistoryStore {
     static Component componentFrom(Map<String, Object> obj, String jsonKey, String textKey) {
         String json = (String) obj.get(jsonKey);
         if (json != null) {
-            try { return Component.Serializer.fromJson(json, registries()); } catch (Exception ignored) {}
+            try { return e33parse(json); } catch (Exception ignored) {}
         }
         String text = (String) obj.get(textKey);
         return text != null ? parseStyledText(text) : null;
@@ -214,7 +214,7 @@ static net.minecraft.core.HolderLookup.Provider registries() {
             // components fine; registry-dependent hovers degrade instead of crashing
             return new net.minecraft.core.HolderLookup.Provider() {
                 @Override
-                public java.util.stream.Stream<net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<?>>> listRegistries() {
+                public java.util.stream.Stream<net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<?>>> listRegistryKeys() {
                     return java.util.stream.Stream.empty();
                 }
                 @Override
@@ -278,22 +278,22 @@ static net.minecraft.core.HolderLookup.Provider registries() {
 
     static Style applySectionCode(Style style, char code) {
         switch (Character.toLowerCase(code)) {
-            case '0': return style.withColor(ChatFormatting.BLACK.getColor() != null ? ChatFormatting.BLACK.getColor() : null);
-            case '1': return style.withColor(ChatFormatting.DARK_BLUE.getColor() != null ? ChatFormatting.DARK_BLUE.getColor() : null);
-            case '2': return style.withColor(ChatFormatting.DARK_GREEN.getColor() != null ? ChatFormatting.DARK_GREEN.getColor() : null);
-            case '3': return style.withColor(ChatFormatting.DARK_AQUA.getColor() != null ? ChatFormatting.DARK_AQUA.getColor() : null);
-            case '4': return style.withColor(ChatFormatting.DARK_RED.getColor() != null ? ChatFormatting.DARK_RED.getColor() : null);
-            case '5': return style.withColor(ChatFormatting.DARK_PURPLE.getColor() != null ? ChatFormatting.DARK_PURPLE.getColor() : null);
-            case '6': return style.withColor(ChatFormatting.GOLD.getColor() != null ? ChatFormatting.GOLD.getColor() : null);
-            case '7': return style.withColor(ChatFormatting.GRAY.getColor() != null ? ChatFormatting.GRAY.getColor() : null);
-            case '8': return style.withColor(ChatFormatting.DARK_GRAY.getColor() != null ? ChatFormatting.DARK_GRAY.getColor() : null);
-            case '9': return style.withColor(ChatFormatting.BLUE.getColor() != null ? ChatFormatting.BLUE.getColor() : null);
-            case 'a': return style.withColor(ChatFormatting.GREEN.getColor() != null ? ChatFormatting.GREEN.getColor() : null);
-            case 'b': return style.withColor(ChatFormatting.AQUA.getColor() != null ? ChatFormatting.AQUA.getColor() : null);
-            case 'c': return style.withColor(ChatFormatting.RED.getColor() != null ? ChatFormatting.RED.getColor() : null);
-            case 'd': return style.withColor(ChatFormatting.LIGHT_PURPLE.getColor() != null ? ChatFormatting.LIGHT_PURPLE.getColor() : null);
-            case 'e': return style.withColor(ChatFormatting.YELLOW.getColor() != null ? ChatFormatting.YELLOW.getColor() : null);
-            case 'f': return style.withColor(ChatFormatting.WHITE.getColor() != null ? ChatFormatting.WHITE.getColor() : null);
+            case '0': return style.withColor(net.minecraft.network.chat.TextColor.BLACK);
+            case '1': return style.withColor(net.minecraft.network.chat.TextColor.DARK_BLUE);
+            case '2': return style.withColor(net.minecraft.network.chat.TextColor.DARK_GREEN);
+            case '3': return style.withColor(net.minecraft.network.chat.TextColor.DARK_AQUA);
+            case '4': return style.withColor(net.minecraft.network.chat.TextColor.DARK_RED);
+            case '5': return style.withColor(net.minecraft.network.chat.TextColor.DARK_PURPLE);
+            case '6': return style.withColor(net.minecraft.network.chat.TextColor.GOLD);
+            case '7': return style.withColor(net.minecraft.network.chat.TextColor.GRAY);
+            case '8': return style.withColor(net.minecraft.network.chat.TextColor.DARK_GRAY);
+            case '9': return style.withColor(net.minecraft.network.chat.TextColor.BLUE);
+            case 'a': return style.withColor(net.minecraft.network.chat.TextColor.GREEN);
+            case 'b': return style.withColor(net.minecraft.network.chat.TextColor.AQUA);
+            case 'c': return style.withColor(net.minecraft.network.chat.TextColor.RED);
+            case 'd': return style.withColor(net.minecraft.network.chat.TextColor.LIGHT_PURPLE);
+            case 'e': return style.withColor(net.minecraft.network.chat.TextColor.YELLOW);
+            case 'f': return style.withColor(net.minecraft.network.chat.TextColor.WHITE);
             case 'k': return style.withObfuscated(true);
             case 'l': return style.withBold(true);
             case 'm': return style.withStrikethrough(true);
@@ -323,10 +323,10 @@ static net.minecraft.core.HolderLookup.Provider registries() {
                     Component senderName = null;
                     String snJson = (String) obj.get("senderNameJson");
                     if (snJson != null) {
-                        try { senderName = Component.Serializer.fromJson(snJson, registries()); } catch (Exception ignored2) {}
+                        try { senderName = e33parse(snJson); } catch (Exception ignored2) {}
                     }
                     if (senderName == null) senderName = Component.literal((String) obj.get("senderName"));
-                    Component content = Component.Serializer.fromJson((String) obj.get("content"), registries());
+                    Component content = e33parse((String) obj.get("content"));
                     if (content == null) content = Component.literal("");
                     if (content.getString().isBlank()) continue;
                     LocalTime t = LocalTime.parse((String) obj.get("time"), DateTimeFormatter.ISO_LOCAL_TIME);
@@ -353,5 +353,35 @@ static net.minecraft.core.HolderLookup.Provider registries() {
     // world join (0 = keep forever, the default)
     public static boolean isExpired(long fileMtime, long now, int retentionDays) {
         return retentionDays > 0 && now - fileMtime > retentionDays * 24L * 3600_000L;
+    }
+
+    /**
+     * 26.2：Component.Serializer 整个没了，序列化改走 ComponentSerialization.CODEC。
+     * 组件可能含 registry 相关负载（悬停事件等），所以用 registryAccess 造
+     * RegistryOps 再编解码，语义与旧版 toJson(component, registries) 对齐。
+     */
+    private static String e33json(Component c) {
+        if (c == null) return null;
+        try {
+            return net.minecraft.network.chat.ComponentSerialization.CODEC
+                .encodeStart(e33ops(), c).getOrThrow().toString();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static Component e33parse(String json) {
+        if (json == null) return null;
+        try {
+            return net.minecraft.network.chat.ComponentSerialization.CODEC
+                .parse(e33ops(), com.google.gson.JsonParser.parseString(json)).getOrThrow();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> e33ops() {
+        return net.minecraft.resources.RegistryOps.create(
+            com.mojang.serialization.JsonOps.INSTANCE, registries());
     }
 }

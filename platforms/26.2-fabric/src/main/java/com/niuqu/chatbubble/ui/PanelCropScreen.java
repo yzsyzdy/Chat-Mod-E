@@ -125,7 +125,7 @@ public class PanelCropScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g, mouseX, mouseY, partialTick);
+        extractBackground(g, mouseX, mouseY, partialTick);
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
         Identifier tex = PanelBackground.textureId();
@@ -181,7 +181,7 @@ public class PanelCropScreen extends Screen {
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent e33event, boolean e33double)
         { double mouseX = e33event.x(); double mouseY = e33event.y(); int button = e33event.button();
-        if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
+        if (button != 0) return super.mouseClicked(e33event, e33double);
         if (over(mouseX, mouseY, btnCancelX, btnY, BTN_W, BTN_H)) {
             onClose();
             return true;
@@ -197,7 +197,7 @@ public class PanelCropScreen extends Screen {
             dragging = true;
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(e33event, e33double);
     }
 
     @Override
@@ -210,14 +210,14 @@ public class PanelCropScreen extends Screen {
             centerY = Mth.clamp(centerY + (float) dragY / dispH, 0f, 1f);
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(e33event, dragX, dragY);
     }
 
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent e33event)
         { double mouseX = e33event.x(); double mouseY = e33event.y(); int button = e33event.button();
         dragging = false;
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(e33event);
     }
 
     @Override

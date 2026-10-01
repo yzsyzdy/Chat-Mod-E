@@ -108,12 +108,12 @@ public final class GroupManager {
 
     public static void create(ServerPlayer player, String name) {
         if (!guard(player)) return;
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) return;
         ensureLoaded(server);
         if (!isValidGroupName(name)) { fail(player, "e33chat.group.bad_name", MAX_NAME_LEN); return; }
         if (groups.containsKey(name)) { fail(player, "e33chat.group.exists", name); return; }
-        if (ChatBubbleMod.groupCreateOpOnly() && !player.hasPermissions(2)) {
+        if (ChatBubbleMod.groupCreateOpOnly() && !((net.minecraft.server.permissions.LevelBasedPermissionSet) player.permissions()).level().isEqualOrHigherThan(net.minecraft.server.permissions.PermissionLevel.GAMEMASTERS)) {
             fail(player, "e33chat.group.op_only");
             return;
         }
@@ -129,7 +129,7 @@ public final class GroupManager {
 
     public static void join(ServerPlayer player, String name) {
         if (!guard(player)) return;
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) return;
         ensureLoaded(server);
         Group g = groups.get(name);
@@ -145,7 +145,7 @@ public final class GroupManager {
 
     public static void leave(ServerPlayer player, String name) {
         if (!guard(player)) return;
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) return;
         ensureLoaded(server);
         Group g = groups.get(name);
@@ -170,12 +170,12 @@ public final class GroupManager {
 
     public static void delete(ServerPlayer player, String name) {
         if (!guard(player)) return;
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server == null) return;
         ensureLoaded(server);
         Group g = groups.get(name);
         if (g == null) { fail(player, "e33chat.group.missing", name); return; }
-        if (!player.getUUID().equals(g.owner) && !player.hasPermissions(2)) {
+        if (!player.getUUID().equals(g.owner) && !((net.minecraft.server.permissions.LevelBasedPermissionSet) player.permissions()).level().isEqualOrHigherThan(net.minecraft.server.permissions.PermissionLevel.GAMEMASTERS)) {
             fail(player, "e33chat.group.not_owner", name);
             return;
         }
@@ -187,7 +187,7 @@ public final class GroupManager {
 
     public static void say(ServerPlayer sender, String name, String content) {
         if (!ChatBubbleMod.groupsEnabled()) { fail(sender, "e33chat.group.disabled"); return; }
-        MinecraftServer server = sender.getServer();
+        MinecraftServer server = sender.level().getServer();
         if (server == null) return;
         ensureLoaded(server);
         Group g = groups.get(name);
@@ -229,7 +229,7 @@ public final class GroupManager {
 
     public static void onClientHello(ServerPlayer player) {
         modClients.add(player.getUUID());
-        MinecraftServer server = player.getServer();
+        MinecraftServer server = player.level().getServer();
         if (server != null) ensureLoaded(server);
         sendGroupList(player);
     }
@@ -242,7 +242,7 @@ public final class GroupManager {
     public static void sendGroupList(ServerPlayer player) {
         // Parity with Forge/Neo: the JOIN-time push can precede ClientHello, so
         // it must not send an empty directory from a not-yet-loaded store.
-        ensureLoaded(player.getServer());
+        ensureLoaded(player.level().getServer());
         boolean enabled = ChatBubbleMod.groupsEnabled();
         List<String> names = new ArrayList<>(groups.keySet());
         List<Integer> counts = new ArrayList<>();

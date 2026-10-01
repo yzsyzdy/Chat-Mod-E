@@ -61,7 +61,7 @@ public class PlayerProfileScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g, mouseX, mouseY, partialTick);
+        extractBackground(g, mouseX, mouseY, partialTick);
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
         // Panel (SDF 圆角：阴影 + 底色，与气泡同画法)
@@ -160,7 +160,7 @@ public class PlayerProfileScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(e33event, e33double);
     }
 
     @Override

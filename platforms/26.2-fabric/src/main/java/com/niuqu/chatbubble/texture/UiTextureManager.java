@@ -24,6 +24,8 @@ public final class UiTextureManager {
     }
 
     public static ChatBubbleTheme currentTheme() {
-        return com.niuqu.chatbubble.ChatBubbleClientSetup.config().theme().get();
+        // 26.2：配置项是 record 访问器，theme() 直接返回主题名（String）。
+        String name = com.niuqu.chatbubble.ChatBubbleClientSetup.config().theme();
+        return "light".equalsIgnoreCase(name) ? ChatBubbleTheme.LIGHT : ChatBubbleTheme.DARK;
     }
 }

@@ -45,6 +45,6 @@ public final class BlockList {
     }
 
     public static boolean isBlocked(ChatMessageStore.ChatMessage m) {
-        return isBlocked(m, ChatBubbleConfig.BLOCKED_PLAYERS.get());
+        return isBlocked(m, com.niuqu.chatbubble.ChatBubbleClientSetup.config().blockedPlayers());
     }
 }

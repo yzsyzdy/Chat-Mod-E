@@ -46,11 +46,11 @@ public class BedScreen extends Screen {
             sendWakeUp();
             return true;
         }
-        if (minecraft.options.keyChat.matches(keyCode, scanCode)) {
+        if (minecraft.options.keyChat.matches(e33key)) {
             minecraft.gui.setScreen(new ChatBubbleScreen(""));
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(e33key);
     }
 
     @Override
