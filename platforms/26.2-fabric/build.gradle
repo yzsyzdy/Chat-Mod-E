@@ -33,8 +33,12 @@ dependencies {
     // mod* 配置 —— jar 本来就是可读名，直接用 compileOnly。
     compileOnly "com.terraformersmc:modmenu:20.0.3"
     // WebP emote decoding via TwelveMonkeys ImageIO (picked up by RasterImageDecoder)
+    // 26.2 / Gradle 9：测试运行时必须显式带上 JUnit Platform launcher ——
+    // Gradle 9 不再把它塞进测试 runtime classpath，缺了会报
+    // "Failed to load JUnit Platform ... including the JUnit Platform launcher"。
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 processResources {

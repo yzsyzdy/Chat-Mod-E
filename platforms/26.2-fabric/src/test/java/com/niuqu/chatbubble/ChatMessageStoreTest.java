@@ -399,8 +399,8 @@ class ChatMessageStoreTest {
         var back = ChatMessageStore.fromLine(ChatMessageStore.toLine(msg));
         assertNotNull(back);
         assertEquals("Steve", back.senderName().getString());
-        assertEquals(net.minecraft.net.minecraft.network.chat.TextColor.AQUA,
-            back.senderName().getStyle().getColor().getRgb());
+        assertEquals(net.minecraft.network.chat.TextColor.AQUA,
+            back.senderName().getStyle().getColor().getValue());
     }
 
     @Test void jsonl_clickPreserved() {
@@ -409,8 +409,7 @@ class ChatMessageStoreTest {
         org.junit.jupiter.api.Assumptions.assumeTrue(
             net.minecraft.client.Minecraft.getInstance() != null,
             "click/hover serialization requires a running Minecraft client");
-        var click = new net.minecraft.network.chat.ClickEvent(
-            net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/tp Steve 0 100 0");
+        var click = new net.minecraft.network.chat.ClickEvent.RunCommand("/tp Steve 0 100 0");
         var content = net.minecraft.network.chat.Component.literal("传我一下")
             .withStyle(s -> s.withClickEvent(click));
         var msg = new ChatMessageStore.ChatMessage(
@@ -445,10 +444,14 @@ class ChatMessageStoreTest {
         var c = ChatMessageStore.parseStyledText("§6[称号]§bE33EPUS");
         // getString() is plain text; the colors live in the styled siblings
         assertEquals("[称号]E33EPUS", c.getString());
-        assertEquals(net.minecraft.net.minecraft.network.chat.TextColor.GOLD,
-            c.getSiblings().get(0).getStyle().getColor().getRgb());
-        assertEquals(net.minecraft.net.minecraft.network.chat.TextColor.AQUA,
-            c.getSiblings().get(1).getStyle().getColor().getRgb());
+        // 【26.2 为什么比 RGB 而不是比 TextColor 对象】TextColor 是带缓存的身份对象：
+        // 从 §6 这类旧格式码建出来的实例与 TextColor.GOLD 常量不是同一个对象，
+        // 用 assertEquals(TextColor, TextColor) 会因 identity/equals 语义而假红。
+        // 比数值才是这条用例真正要表达的「颜色对不对」。
+        assertEquals(net.minecraft.network.chat.TextColor.GOLD.getValue(),
+            c.getSiblings().get(0).getStyle().getColor().getValue());
+        assertEquals(net.minecraft.network.chat.TextColor.AQUA.getValue(),
+            c.getSiblings().get(1).getStyle().getColor().getValue());
     }
 
     @Test void parseStyled_boldItalic() {

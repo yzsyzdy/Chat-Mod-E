@@ -59,7 +59,7 @@ class BracketCodecTest {
         boolean[] redSeen = {false};
         r.textWithoutImages().visit((style, part) -> {
             if (part.contains("code") && style.getColor() != null
-                    && style.getColor().getRgb() == Formatting.RED.getColorValue()) {
+                    && style.getColor().getValue() == net.minecraft.network.chat.TextColor.RED.getValue()) {
                 redSeen[0] = true;
             }
             return java.util.Optional.empty();
@@ -110,8 +110,7 @@ class BracketCodecTest {
         // in the headless Fabric unit-test environment — skip gracefully there
         // (this path is covered by the Forge/NeoForge unit tests).
         try {
-            new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
-                Component.literal("probe"));
+            new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal("probe"));
         } catch (Throwable t) {
             org.junit.jupiter.api.Assumptions.abort("HoverEvent unavailable in this test environment");
             return;
@@ -119,7 +118,7 @@ class BracketCodecTest {
         // EasyBot relays images as a visible summary run whose SHOW_TEXT hover
         // contains the [[CICode,...]] bracket (ChatImage-compatible).
         Component input = Component.literal("[图片]").setStyle(Style.EMPTY.withHoverEvent(
-            new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
+            new net.minecraft.network.chat.HoverEvent.ShowText(
                 Component.literal("[[CICode,url=https://a.com/x.png]]"))));
         ParseResult r = BracketCodec.parseOrExtract(input);
         assertEquals(1, r.images().size());
