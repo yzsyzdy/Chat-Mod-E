@@ -21,7 +21,7 @@ public class E33ChatCommands {
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             var tpl = net.minecraft.commands.Commands.literal("template")
-                .requires(s -> ((net.minecraft.server.permissions.LevelBasedPermissionSet) s.permissions()).level().isEqualOrHigherThan(net.minecraft.server.permissions.PermissionLevel.GAMEMASTERS));
+                .requires(s -> s.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER));
             tpl.then(net.minecraft.commands.Commands.literal("list")
                 .executes(ctx -> list(ctx.getSource())));
 
@@ -67,7 +67,7 @@ public class E33ChatCommands {
 
             dispatcher.register(net.minecraft.commands.Commands.literal("e33chat")
                 .then(net.minecraft.commands.Commands.literal("gui")
-                    .requires(s -> ((net.minecraft.server.permissions.LevelBasedPermissionSet) s.permissions()).level().isEqualOrHigherThan(net.minecraft.server.permissions.PermissionLevel.GAMEMASTERS))
+                    .requires(s -> s.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER))
                     .executes(ctx -> openServerGui(ctx.getSource())))
                 .then(tpl)
                 .then(groupCommands()));

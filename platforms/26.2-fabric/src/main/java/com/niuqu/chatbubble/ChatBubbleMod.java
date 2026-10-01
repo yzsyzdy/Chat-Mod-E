@@ -170,8 +170,7 @@ public class ChatBubbleMod implements ModInitializer {
         ServerPlayNetworking.registerGlobalReceiver(ServerConfigSavePayload.ID, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
-                if (!((net.minecraft.server.permissions.LevelBasedPermissionSet) player.permissions())
-                        .level().isEqualOrHigherThan(net.minecraft.server.permissions.PermissionLevel.GAMEMASTERS)) {
+                if (!player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)) {
                     player.sendSystemMessage(Component.translatable("e33chat.server.op_required")
                         .withStyle(net.minecraft.ChatFormatting.RED), false);
                     return;

@@ -113,7 +113,7 @@ public final class GroupManager {
         ensureLoaded(server);
         if (!isValidGroupName(name)) { fail(player, "e33chat.group.bad_name", MAX_NAME_LEN); return; }
         if (groups.containsKey(name)) { fail(player, "e33chat.group.exists", name); return; }
-        if (ChatBubbleMod.groupCreateOpOnly() && !((net.minecraft.server.permissions.LevelBasedPermissionSet) player.permissions()).level().isEqualOrHigherThan(net.minecraft.server.permissions.PermissionLevel.GAMEMASTERS)) {
+        if (ChatBubbleMod.groupCreateOpOnly() && !player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)) {
             fail(player, "e33chat.group.op_only");
             return;
         }
@@ -175,7 +175,7 @@ public final class GroupManager {
         ensureLoaded(server);
         Group g = groups.get(name);
         if (g == null) { fail(player, "e33chat.group.missing", name); return; }
-        if (!player.getUUID().equals(g.owner) && !((net.minecraft.server.permissions.LevelBasedPermissionSet) player.permissions()).level().isEqualOrHigherThan(net.minecraft.server.permissions.PermissionLevel.GAMEMASTERS)) {
+        if (!player.getUUID().equals(g.owner) && !player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)) {
             fail(player, "e33chat.group.not_owner", name);
             return;
         }
