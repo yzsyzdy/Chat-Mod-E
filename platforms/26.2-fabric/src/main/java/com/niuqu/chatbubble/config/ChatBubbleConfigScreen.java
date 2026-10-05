@@ -23,7 +23,7 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
-public class ChatBubbleConfigScreen extends Screen {
+public class ChatBubbleConfigScreen extends Screen implements com.niuqu.chatbubble.render.TopLayerScreen {
     private final Screen lastScreen;
     /** True while this screen has pushed its HUD-hide request (see init/removed). */
     private boolean hudHidden;

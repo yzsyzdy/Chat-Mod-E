@@ -31,7 +31,7 @@ import java.util.Objects;
  * sends everything back over ServerConfigSavePayload — the server re-validates,
  * persists and rebroadcasts. Esc / Cancel discards.
  */
-public class ServerConfigScreen extends Screen {
+public class ServerConfigScreen extends Screen implements com.niuqu.chatbubble.render.TopLayerScreen {
     private final Screen lastScreen;
     /** True while this screen has pushed its HUD-hide request (see init/removed). */
     private boolean hudHidden;

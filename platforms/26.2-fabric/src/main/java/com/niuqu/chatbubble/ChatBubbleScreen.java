@@ -65,7 +65,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public class ChatBubbleScreen extends ChatScreen {
+public class ChatBubbleScreen extends ChatScreen implements com.niuqu.chatbubble.render.TopLayerScreen {
 
     // Layout
     private int panelX, panelW;
@@ -703,9 +703,28 @@ public class ChatBubbleScreen extends ChatScreen {
             minecraft.gui.setScreen(null);
     }
 
-    // 26.2：Screen.renderBackground 已被 extractBackground 取代，这里不再覆写任何东西 ——
-    // 本类本来就是要「关掉原版模糊」，而现在 drawTextureIcon / 各面板自己负责背景，
-    // 不覆写 extractBackground 即可达到同样效果（覆写了反而要自己重画背景）。
+    /**
+     * 关掉原版背景（模糊 + 压暗），背景交给本类自己的面板去画。
+     *
+     * <p>上游 1.21.1 就有这个空实现，注释是 {@code no-op: disable vanilla blur}。26.2 把
+     * {@code Screen.renderBackground} 换成了 {@code extractBackground}，移植时这个覆写被删掉了，
+     * 理由写的是"不覆写即可达到同样效果"—— <b>那个判断不成立</b>。26.2 的默认实现（已核对字节码）是：
+     *
+     * <pre>
+     *   isInGameUi()   -> extractTransparentBackground()   // 铺一层暗色渐变
+     *   level == null  -> extractPanorama()
+     *   level != null  -> extractBlurredBackground()       // 原版模糊
+     *                  -> extractMenuBackground()
+     * </pre>
+     *
+     * <p>所以删掉之后，聊天面板背后会多出原版的模糊和压暗（HUD 也一起被压暗）。
+     * 本类和 {@code ChatBubbleConfigScreen} / {@code ServerConfigScreen} / {@code BedScreen}
+     * 一样，都要把它关掉。
+     */
+    @Override
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        // no-op: disable the vanilla blurred / dimmed backdrop
+    }
 
     private float getAnimProgress() {
         if (!ChatBubbleClientSetup.config().animationEnabled()) return 1.0f;
@@ -1260,7 +1279,7 @@ public class ChatBubbleScreen extends ChatScreen {
                     }
                     return true;
                 }
-                net.minecraft.client.gui.screens.Screen.defaultHandleClickEvent(style.getClickEvent(), minecraft, this); return true;
+                runVanillaClickEvent(style.getClickEvent()); return true;
             }
         }
 
@@ -1664,12 +1683,11 @@ public class ChatBubbleScreen extends ChatScreen {
         renderPopupWithAnim(g, quickAnimStart, quickCloseStart, a -> () -> quickChatPanel.render(g, mouseX, mouseY, font, c(), panelX, panelW, barTop, quickChatInput, a));
         renderPopupWithAnim(g, searchAnimStart, searchCloseStart, a -> () -> searchPanel.render(g, mouseX, mouseY, font, c(), panelX, panelW, barTop, searchInput, searchMatches, searchMatchIdx, a));
         renderPopupWithAnim(g, groupAnimStart, groupCloseStart, a -> () -> groupBrowser.render(g, mouseX, mouseY, font, c(), panelX, panelW, barTop, groupCreateInput, a));
-        // 输入框 widget 在 z=50 的 children 循环渲染，会被这里 z=100 的不透明面板背景盖住
-        // （5bb740e 弹层 z 提升引入）——面板打开时在同 z 重画一次，文字/光标才可见。
-        // widget 无背景（drawsBackground=false），只画文字/光标，不遮挡面板内容
-        if (quickChatPanel.visible && quickChatInput != null) quickChatInput.extractRenderState(g, mouseX, mouseY, delta);
-        if (searchPanel.visible && searchInput != null) searchInput.extractRenderState(g, mouseX, mouseY, delta);
-        if (groupBrowser.visible && groupCreateInput != null) groupCreateInput.extractRenderState(g, mouseX, mouseY, delta);
+        // 【26.2】这里曾经为「弹层输入框被 z=100 的弹层背景盖住」补画一次，现在不需要了：
+        // 26.2 的 pose 是 2D 的 Matrix3x2fStack，translate 没有 z 分量，旧代码 translate(0,0,100)
+        // / z=50 那套分层已经全部塌成同一层，层序只由绘制顺序决定。而这三个输入框是
+        // addRenderableWidget 注册的、由下面的 children 循环渲染，位置本来就在弹层之后 ——
+        // 再补画一次只会让文字和光标被合成两遍（偏粗偏暗），所以整段删掉。
         g.pose().popMatrix();
 
         g.pose().popMatrix();
@@ -2174,6 +2192,34 @@ public class ChatBubbleScreen extends ChatScreen {
         return lo;
     }
 
+    /**
+     * 把点击事件交给原版处理。
+     *
+     * <p>【26.2 坑，曾导致功能静默失效】旧版的 {@code Screen.handleTextClick} 在 26.2 里没了，
+     * 被**拆成两个互补的静态方法**（已核字节码，前者**不会**转发给后者）：
+     *
+     * <ul>
+     *   <li>{@code defaultHandleClickEvent}：只处理 OpenUrl / OpenFile / SuggestCommand /
+     *       CopyToClipboard</li>
+     *   <li>{@code defaultHandleGameClickEvent}：才处理 <b>RunCommand</b> / ShowDialog / Custom</li>
+     * </ul>
+     *
+     * <p>移植时调用点全换成了前者，于是「点击执行命令」这一条路断了：玩家名上的 /msg、/warp、
+     * /tpa、可点菜单、QQ 转发的可点文本基本都是 {@code run_command}，点了完全没反应。
+     * 而 URL、命令补全建议、打开文件、复制到剪贴板都仍然正常，所以一直没被注意到。
+     */
+    private void runVanillaClickEvent(ClickEvent click) {
+        if (click == null) return;
+        if (click instanceof ClickEvent.RunCommand
+                || click instanceof ClickEvent.ShowDialog
+                || click instanceof ClickEvent.Custom) {
+            // 这个分支内部会 checkcast LocalPlayer，需要有玩家在场（游戏内正常）
+            net.minecraft.client.gui.screens.Screen.defaultHandleGameClickEvent(click, minecraft, this);
+        } else {
+            net.minecraft.client.gui.screens.Screen.defaultHandleClickEvent(click, minecraft, this);
+        }
+    }
+
     private void executeClickAction(double mouseX, double mouseY) {
         Style style = getHoveredStyle(mouseX, mouseY);
         if (style != null && style.getClickEvent() != null) {
@@ -2189,7 +2235,7 @@ public class ChatBubbleScreen extends ChatScreen {
                     net.minecraft.client.gui.screens.Screen.defaultHandleClickEvent(style.getClickEvent(), minecraft, this);
                 }
             } else {
-                net.minecraft.client.gui.screens.Screen.defaultHandleClickEvent(style.getClickEvent(), minecraft, this);
+                runVanillaClickEvent(click);
             }
         }
     }

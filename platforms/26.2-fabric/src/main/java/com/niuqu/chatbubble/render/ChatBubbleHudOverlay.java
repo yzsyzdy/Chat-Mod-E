@@ -88,6 +88,10 @@ public class ChatBubbleHudOverlay {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options == null) return;
         if (mc.getDebugOverlay().showDebugScreen()) return;
+        // 界面被推迟到最上层画时（TopLayerScreen + malilib），本钩子触发的时刻早于真正的
+        // 界面绘制，此刻画横幅会被随后补画的面板盖住 —— 先跳过，交给
+        // TopLayerDraw.drawPending() 在界面之后补画。详见 TopLayerDraw.isPending()。
+        if (TopLayerDraw.isPending()) return;
         if (mc.gui.screen() instanceof ChatBubbleScreen) {
             MentionNotificationBanner.INSTANCE.render(g,
                 mc.getWindow().getGuiScaledWidth(),

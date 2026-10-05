@@ -12,6 +12,8 @@
     "MouseHandlerAccessor",
     "SuggestionWindowAccessor",
     "AwtHeadlessHackMixin",
-    "InGameHudMixin"
+    "InGameHudMixin",
+    "TopLayerScreenMixin",
+    "TopLayerRedrawMixin"
   ]
 }
