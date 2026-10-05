@@ -246,6 +246,9 @@ public class ChatBubbleMod implements ModInitializer {
 
             try {
                 if (!historyEnabled) return;
+                // 装了 chatprefix 就把自动补发让给它：它按 lastSeen 补"离线期间"、
+                // 给新人补最近 N 天，比这里的固定 HISTORY_MAX 条更准；两边都发会重复两遍
+                if (com.niuqu.chatbubble.compat.ChatPrefixCompat.historyReplaySuperseded()) return;
                 List<HistoryPayload.HistoryEntry> snapshot = snapshotHistory();
                 if (!snapshot.isEmpty()) {
                     ServerPlayNetworking.send(handler.player, new HistoryPayload(snapshot));
