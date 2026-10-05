@@ -125,7 +125,12 @@ public class PanelCropScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        extractBackground(g, mouseX, mouseY, partialTick);
+        // 【26.2】这里**不要**再手动调 extractBackground。
+        // 1.21.1 时代 Screen.render 不会自动画背景，所以各界面自己调；26.2 改成
+        // Screen.extractRenderStateWithTooltipAndSubtitles 先 nextStratum -> extractBackground
+        // -> nextStratum -> extractRenderState，也就是进到本方法之前背景已经画过一次了。
+        // 再调一次会让背景模糊重复执行，直接抛
+        // IllegalStateException: Can only blur once per frame（选完自定义背景图进裁剪界面必崩）。
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
         Identifier tex = PanelBackground.textureId();

@@ -58,7 +58,19 @@ public final class EmoteStore {
             emotes.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
             while (emotes.size() > EMOTE_MAX) emotes.remove(emotes.size() - 1);
         }
-        textures.keySet().removeIf(f -> !emotes.contains(f));
+        // 先释放不再需要的纹理，再从 map 里移除。
+        // 【不能只 removeIf】那样只是不再引用，TextureManager 里注册的那份 DynamicTexture
+        // 会一直留着 —— 反复添加/删除表情文件就是稳定的显存泄漏（贴图 + NativeImage）。
+        // 这个坑上游就有，26.2 的 register(id, texture) 让它更容易累积。
+        for (Map.Entry<File, Identifier> e : new ArrayList<>(textures.entrySet())) {
+            if (emotes.contains(e.getKey())) continue;
+            try {
+                Minecraft.getInstance().getTextureManager().release(e.getValue());
+            } catch (Throwable ignored) {
+                // 资源重载可能已经把纹理清掉了；释放失败不该影响这次刷新
+            }
+            textures.remove(e.getKey());
+        }
     }
 
     public static List<File> list() {

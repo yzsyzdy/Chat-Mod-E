@@ -61,7 +61,11 @@ public class PlayerProfileScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
-        extractBackground(g, mouseX, mouseY, partialTick);
+        // 【26.2】不要手动调 extractBackground：26.2 的
+        // Screen.extractRenderStateWithTooltipAndSubtitles 已经在本方法之前调过一次
+        // （nextStratum -> extractBackground -> nextStratum -> extractRenderState）。
+        // 再调会重复触发背景模糊，抛 IllegalStateException: Can only blur once per frame
+        // —— 与 PanelCropScreen 同一个坑。
         ChatBubbleTheme.Colors c = Appearance.snapshot();
 
         // Panel (SDF 圆角：阴影 + 底色，与气泡同画法)
