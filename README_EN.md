@@ -7,16 +7,20 @@
 </p>
 
 <p align="center">
-  <img alt="MC" src="https://img.shields.io/badge/MC-1.20.1--1.21.1-green">
-  <img alt="Loader" src="https://img.shields.io/badge/Loader-Forge%20%7C%20NeoForge%20%7C%20Fabric-orange">
+  <img alt="MC" src="https://img.shields.io/badge/MC-26.2-green">
+  <img alt="Loader" src="https://img.shields.io/badge/Loader-Fabric-orange">
   <img alt="Side" src="https://img.shields.io/badge/Side-Client%20required,%20server%20optional-blue">
-  <img alt="Java" src="https://img.shields.io/badge/Java-17%2B%20%7C%2021%2B-yellow">
-  <img alt="Version" src="https://img.shields.io/badge/Version-2.3.16-informational">
-  <img alt="Downloads" src="https://img.shields.io/github/downloads/E33EPUS/E33Chat/total">
+  <img alt="Java" src="https://img.shields.io/badge/Java-25%2B-yellow">
+  <img alt="Version" src="https://img.shields.io/badge/Version-2.4.15-informational">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-brightgreen">
 </p>
 
 E33Chat is a chat-enhancement mod that rebuilds the vanilla chat HUD in a chat-app style: bubbles with heads, @ mentions, a whisper sidebar, search, emoji & quick phrases, image messages, quote reply, notification banners, local chat history, and a fully reworked settings screen.
+
+> [!IMPORTANT]
+> **This repository targets Minecraft 26.2 on Fabric only.** The upstream three-platform layout (1.20.1 Forge + 1.21.1 NeoForge + 1.21.1 Fabric) is retired; only `platforms/26.2-fabric` remains, and the old platform directories and branches are no longer maintained.
+>
+> Also note: **Minecraft has been unobfuscated since 26.1**, so there are no Yarn mappings here and no remap step — that is intentional, see [Building from source](#building-from-source).
 
 ---
 
@@ -43,46 +47,46 @@ E33Chat is a chat-enhancement mod that rebuilds the vanilla chat HUD in a chat-a
 
 | Dependency | Type | Notes |
 |---|---|---|
-| Minecraft | Required | 1.20.1 (Forge) / 1.21.1 (NeoForge / Fabric) |
-| Java | Required | 17+ (Forge 1.20.1) / 21+ (1.21.1) |
-| Forge | Per platform | 47.0.0+ (1.20.1) |
-| NeoForge | Per platform | 21.x (1.21.1) |
-| Fabric Loader | Per platform | 0.16.0+ (1.21.1) |
-| Fabric API | Per platform | Any compatible version (1.21.1) |
+| Minecraft | Required | **26.2** |
+| Fabric Loader | Required | 0.19.5+ |
+| Fabric API | Required | 0.161.0+26.2 (`fabric-api`, any compatible version) |
+| Java | Required | **25+** (required by 26.2; `javaVersion.majorVersion=25`) |
+| ModMenu | Optional | 20.0.0+ — needed to reach the settings from the mod list |
 | CustomSkinLoader | Optional | Shows offline players' heads |
 
-1. Download the JAR for your platform from [Releases](https://github.com/E33EPUS/E33Chat/releases)
-2. Drop it into `.minecraft/mods/` (match your loader — do not mix platform JARs)
-3. Launch the game
+1. Download `e33chat-Fabric-26.2-2.4.15.jar`
+2. Drop it into `.minecraft/mods/`
+3. Launch the game (client-side is required; the server side is optional and unlocks extra features — see [Server-side bonus](#server-side-bonus))
 
 ---
 
 ## Quick start
 
-1. Open chat and the E33Chat panel appears; click the **gear** at the bottom-left → Menu → Settings
-2. In *Chat Screen* adjust panel width (400–1600 physical pixels — resizing the window never changes the real width; enable *Fullscreen Panel* to fill the whole screen), bubble color, corner radius, message gap and avatar size (panel blur is off by default — enable manually if wanted)
-3. In *Notifications* configure the @ sound, banner, whisper sound and master volume; banner position is adjustable (`banner_offset_x/y`) to avoid other HUD elements
-4. Send images: the **upload button** / **Ctrl+V paste** / **drag & drop** — they upload and send automatically
+1. Press **T / Enter** to open chat and you get the E33Chat panel. **There is no custom keybind** — it uses the vanilla chat key; the `[T]` on the HUD icon simply shows which key you have bound
+2. Bottom-left **gear** → menu → Settings opens the config screen
+3. The "Chat" tab controls panel width (400–1600 physical pixels, unaffected by GUI scale; "fullscreen panel" fills the screen), bubble colours, corner radius, message gap and avatar size
+4. The "Notify" tab configures the @ ping, banners, whisper sounds and master volume; banner offset (`banner_offset_x/y`) lets you dodge other HUD elements
+5. Send an image: **upload button** on the left / **Ctrl+V** / **drag an image into the window** — it is sent as soon as the upload finishes
 
 ---
 
 ## Features
 
-- 💬 **Chat bubbles** — Heads and names; colors / text color / corner radius / theme adjustable; avatars top-aligned, shown on the first message of a same-sender run only (QQ-style); message gap 4px in-group, 12px between groups
-- 🖼️ **Image messages** — `[[CICode]]` / `[[ChatUpgrade]]` render natively in bubbles (ChatImage interop), click opens the original; anti-flood rate limiting + receive toggle
-- ☁️ **Server-side media hosting** — With E33Chat on the server, images are stored there permanently; otherwise the mod falls back to a third-party host automatically
-- 😀 **Custom emote pack** — Drop images into `config/e33chat/emotes/` (up to 32), or Ctrl+V a clipboard image; click to send
-- @ **Mention autocomplete** — Type `@` for a player list, left-click a head to @ them; sound + banner when you are @'d or quoted
-- 👥 **Whisper sidebar** — Online player list, unread dots, public / whisper split view, NPC hide list
-- 🔍 **Search & emoji & quick phrases** — Real-time search (Chinese supported), emoji / kaomoji panel, one-click phrases
-- 📋 **Copy & quote reply** — Right-click a message to copy / quote; right-click a head to whisper / teleport / block
-- 🚫 **Block players** — Messages vanish completely (vanilla chat / bubbles / banners / sounds), instant, never restored on rejoin
-- 🔔 **Notification banner** — Covers @ / quote / whisper / system; master volume slider + per-type toggles + position offset
-- 🎬 **Animation styles** — Panel / banner / popup / message configured independently (SLIDE / FADE / ZOOM / NONE), popups animate on open and close
-- 🗨️ **Vanilla chat box kept** — Renders as usual (shifted up clear of the HUD icon); ChatHeads / ChatAnimation work out of the box
-- 💾 **Chat history** — Saved per world / server, JSONL preserves colors and click events (off by default); auto-saved every 30 s
-- 🛠️ **Settings screen** — 5 tabs + collapsible categories + live preview + snapshot save / exit; every option is GUI-adjustable
-- ✅ Anti-spam merge · 📝 input preserved · 🌈 local `&` color rendering · 🧩 server message-format templates
+- 💬 **Chat bubbles** — with head and name; colours, text colour, corner radius and theme are configurable. Heads are top-aligned, consecutive messages from one person show the head only on the first (QQ style); gap is 4px within a group and 12px between groups
+- 🖼️ **Image messages** — renders `[[CICode]]` / `[[ChatUpgrade]]` protocol images natively inside the bubble (interoperable with ChatImage); click to open the original. Rate-limited against spam, with a receive toggle
+- ☁️ **Server-side media hosting** — when the server also runs E33Chat, images are stored on the server (permanently); otherwise it falls back to a third-party host
+- 😀 **Custom emotes** — drop images into `config/e33chat/emotes/` (up to 32); Ctrl+V adds the clipboard image; click to send
+- @ **Mention completion** — type `@` for a player list; left-click a head to mention. Ping + banner when you are mentioned or quoted
+- 👥 **Whisper sidebar** — online player list, unread dots, public/whisper split, NPC hide list
+- 🔍 **Search, emoji & quick phrases** — live search (CJK aware), emoji/kaomoji panel, one-click quick phrases
+- 📋 **Copy & quote reply** — right-click a message to copy/quote; right-click a head to whisper/teleport/block
+- 🚫 **Player blocking** — messages disappear entirely (vanilla chat, bubbles, banners, sounds), effective immediately, not restored on rejoin
+- 🔔 **Notification banners** — covers @ / quote / whisper / system messages, with a master volume slider, per-type toggles and position offset
+- 🎬 **Animation styles** — panel / banner / popup / message each configurable (SLIDE / FADE / ZOOM / NONE); popups animate open and closed
+- 🗨️ **Vanilla chat preserved** — still renders normally (shifted up to avoid the HUD icon), so ChatHeads / ChatAnimation etc. keep working
+- 💾 **Chat history** — stored per world/server, preserving colours and click events (off by default); autosaves every 30 seconds
+- 🛠️ **Config screen** — 5 tabs with collapsible sub-categories, live preview, snapshot save/discard; every colour, number and toggle is adjustable in the GUI
+- ✅ Anti-spam merge counter · 📝 keep input on close · 🌈 local `&` colour codes · 🧩 server-declared message templates
 
 ---
 
@@ -90,64 +94,74 @@ E33Chat is a chat-enhancement mod that rebuilds the vanilla chat HUD in a chat-a
 
 ### Chat display
 
-- Your bubbles sit right, others left, colors configurable; bubble corner radius 0–10 (default 4)
-- Whispers show as `<name>[PM] content`, quotes as `<name>[Quote] content` (yellow tag); server prefix decorations and team colors are kept
-- Message gap: consecutive same-sender messages within 5 minutes use `message_gap` × 2/3 (default 4px); sender change / timeout / system / time separator use ×2 (default 12px)
+- Your own bubbles align right, others left; colours are configurable per side; corner radius 0–10 (default 4)
+- Whispers show as `<name>[whisper] content`, quote replies as `<name>[quote] content` (yellow tag); server prefix decoration and team colours are preserved
+- Message gap: consecutive messages from the same sender within 5 minutes = `message_gap` × 2/3 (default 4px); sender change / timeout / system message / time separator = ×2 (default 12px)
 
 ### Images & media
 
-- **Send**: upload button / Ctrl+V / drag & drop; scaled to ≤2048px and re-encoded; uploads queue serially (up to 8), one Enter is enough, failures restore the input
-- **Hosts**: default uguu.se (~3h expiry); with server hosting on, images go to the server (`e33chat://media/<id>`, permanent); custom hosts via `upload_url` and friends (multipart POST; response URL from the body, or `json:<field path>`)
-- **Receive**: image codes render natively, legacy history images reload automatically; anti-abuse = sliding-window rate limit + 64-entry LRU texture cache + pre-decode scaling; "Receive images" off renders plain `[Image]` text and never downloads
+- **Sending**: upload button / Ctrl+V / drag & drop; automatically scaled to ≤2048px and re-encoded; uploads are queued serially (up to 8), one Enter is enough, and the input is restored on failure
+- **Hosting**: defaults to uguu.se (expires in ~3 hours); with server-side hosting enabled it is stored on the server instead (`e33chat://media/<id>`, permanent); custom hosts use the four `upload_url` keys (multipart POST, response read as raw text or `json:field.path`)
+- **Receiving**: image codes render natively, old history images are re-loaded for compatibility; abuse protection = sliding-window rate limit + 64-entry LRU texture cache + downscale before decode; with "receive images" off it shows plain `[image]` and downloads nothing
 
 ### Sidebar & notifications
 
-- Sidebar: click a name to whisper, bouncing unread dots, search filter, split view, wildcard hide list (e.g. `*[NPC]*`)
-- Banners: @ / quote / whisper / system, system on by default; "jump to mention" button; position offset ±1000px to avoid HUD overlap
-- Optional "require @ prefix"; self-notification toggles (off by default, testing aid); master volume slider
+- Sidebar: click a name to whisper, pulsing unread dots, search filter, public/whisper split, wildcard hide list (e.g. `*[NPC]*`)
+- Banners: four kinds (@ / quote / whisper / system), system banners on by default; a "jump to mention" button; ±1000px offset to avoid overlapping other HUD elements
+- Optional "mentions must carry the @ prefix"; self-notification toggles (off by default, for debugging); a master volume slider
 
 ### Animation & appearance
 
-- Four animation groups, each SLIDE / FADE / ZOOM / NONE: panel (SLIDE), banner (SLIDE), popup (FADE), message (FADE); `animation=false` disables all
-- Popups: 200ms fade-in, 150ms eased close (ESC / icon toggle / outside click all animate); banner: 250ms in, 150ms out
-- The popup family (settings / emoji / quick-chat / search / @ popup / context menu) uses SDF corners + shadow + 1px border; quote-block radius 8
-- Panel blur `blur_enabled` is off by default (lowest value-per-cost)
+- Four independent animation styles SLIDE / FADE / ZOOM / NONE: panel (SLIDE by default), banner (SLIDE), popup (FADE), message (FADE); `animation=false` disables all of them
+- Popups fade in over 200ms and out over 150ms (all paths: ESC / icon toggle / click outside); banners enter over 250ms and leave over 150ms
+- Popups (settings / emoji / quick phrases / search / @ popup / context menu) use rounded corners, a shadow and a 1px outline; quote blocks use radius 8
+- Panel background blur `blurEnabled` is off by default (and is a no-op on 26.2 — see [Known limitations](#known-limitations))
 
 ### Settings & textures
 
-- Dark / light themes; 5 tabs (Chat Screen / HUD / Notifications / Sidebar / Advanced), snapshot save / exit with ESC confirm
-- **Resource-pack override**: UI elements and icons render from textures at `assets/e33chat/textures/gui/{dark|light}/<element>.png`, F3+T hot-reloads
-- ⚠️ **Popup backgrounds stopped being texture-driven in 2.3.16** (SDF-rounded, semantic theme colors instead); chat bubbles / quote blocks / @ banner are SDF-rendered by design — neither is resource-pack overridable
+- Dark / light themes; 5 config tabs (Chat / HUD / Notify / Sidebar / Advanced), snapshot save/discard, ESC asks before discarding
+- **Resource-pack overrides**: UI elements and icons are texture-rendered from `assets/e33chat/textures/gui/{dark|light}/<element>.png`; F3+T applies changes immediately
+- ⚠️ **Popup backgrounds stopped using textures in 2.3.16** (driven by semantic theme colours); chat bubbles, quote blocks and @ banners were always drawn procedurally — neither can be overridden by a resource pack
 
 ---
 
 ## Server-side bonus
 
-The server mod is optional. Installing it additionally enables:
+The server side is optional. Installing it additionally enables:
 
-- Quote sync and cross-client @ mention sync (Chinese names included)
+- Quote-reply sync and cross-client @ mention sync (including CJK names)
 - New players receive recent chat history on join (`history_enabled`, off by default)
-- Head teleport via `/tpa` (`use_tpa`, off by default)
-- **Server-side media hosting** (`media_enabled`, on by default): images stored permanently (8MB/file, 512MB total quota, random UUID IDs, per-player throttling)
-- **Message-format templates**: the server declares its chat format and syncs it to every client, so plugin/NCR-rewritten lines parse correctly (`/e33chat gui`; "Generate from message…" or one-click presets; placeholders `{display_name}` `{prefix}` `{external}` `{content}` `{sender}` `{target}` `{sep}`)
-- **EasyBot group-message compatibility** (`easybot_compat`, on by default): parses QQ group messages relayed by EasyBot into player bubbles and renders EasyBot/ChatImage CICode images inside bubbles. Common shapes are auto-detected (since 2.4.8 neither the group label nor the QQ number is required); if the EasyBot template is customized, override it with an `{external}` chat template (the server-config presets include the EasyBot format, see [EasyBot template guide](#easybot-template-guide))
+- Head teleport switches to `/tpa` (`use_tpa`, off by default)
+- **Server-side image hosting** (`media_enabled`, on by default): images stored on the server permanently (8MB/file, 512MB total quota, random UUIDs to prevent enumeration, per-player rate limit)
+- **Message format templates**: the server declares the chat format and syncs it to everyone — messages whose format was changed by plugins / NCR still parse correctly (`/e33chat gui` to configure; "generate from message" or a one-click preset; placeholders `{display_name}` `{prefix}` `{external}` `{content}` `{sender}` `{target}` `{sep}`)
+- **EasyBot group-message compatibility** (`easybot_compat`, on by default): QQ group messages relayed into the game by EasyBot are parsed into player bubbles, and EasyBot/ChatImage CICode images render inside the bubble. Common formats are auto-detected (since 2.4.8 the group prefix and QQ number are both optional); if you changed EasyBot's sync template, override it with an `{external}` chat template (the server config ships presets — see [EasyBot templates](#easybot-templates))
 
-Server config: `saves/<world>/serverconfig/e33chat-server.toml` (Fabric: `.json`) ｜ OP commands: `/e33chat template list|set|remove|clear|test` ｜ `/e33chat gui` for the graphical config
+**Server config**: `<world dir>/serverconfig/e33chat-server.json` (created on the first player join)
 
-### EasyBot template guide
+| Command | Permission | Description |
+|---|---|---|
+| `/e33chat gui` | OP | Graphical config for the server-side options |
+| `/e33chat template list` | OP | List current templates |
+| `/e33chat template set <chat\|whisper> <template>` | OP | Set a template |
+| `/e33chat template remove <chat\|whisper>` | OP | Remove one |
+| `/e33chat template clear <chat\|whisper>` | OP | Clear |
+| `/e33chat template test <chat\|whisper>` | OP | Try parsing a message with the template |
+| `/e33chat group list \| create \| join \| leave \| delete \| msg` | — | Chat groups (when enabled server-side) |
 
-- E33Chat has built-in recognition for the common EasyBot shapes: `[Group] <Nick(QQ#)> content`, `[Group] <Nick> content`, `<Nick> content` and `<Nick（group card）> content` (since 2.4.8 neither the group label nor the QQ number is required); `easybot_compat` is on by default, so it works out of the box
-- If you changed the "sync template (to server)" in EasyBot, add an `{external}` chat template in `/e33chat gui` → Chat Templates to override
+### EasyBot templates
+
+- E33Chat recognises the common EasyBot formats out of the box: `[group] <nick(QQ)> content`, `[group] <nick> content`, `<nick> content`, `<nick (group card)> content` (since 2.4.8 neither the group prefix nor the QQ number is required), so `easybot_compat` works as-is
+- If you changed "sync template (to server)" inside EasyBot itself, go to `/e33chat gui` → chat templates and add an `{external}` template to override it
 - Common examples:
 
-| EasyBot sync-template output | E33Chat chat template |
+| EasyBot sync template | E33Chat chat template |
 |---|---|
-| `[Group] <Nick(QQ#)> content` | `[{prefix}] <{external}> {content}` |
-| `[Group] Nick: content` | `[{prefix}] {external}{sep}{content}` |
-| `Nick >> content` | `{external}{sep}{content}` |
-| `<Nick> content` | `<{external}> {content}` |
+| `[group] <nick(QQ)> content` | `[{prefix}] <{external}> {content}` |
+| `[group] nick: content` | `[{prefix}] {external}{sep}{content}` |
+| `nick >> content` | `{external}{sep}{content}` |
+| `<nick> content` | `<{external}> {content}` |
 
-- Or add it by command: `/e33chat template set chat "[{prefix}] <{external}> {content}"`
+- Or add it directly: `/e33chat template set chat "[{prefix}] <{external}> {content}"`
 
 ---
 
@@ -155,61 +169,69 @@ Server config: `saves/<world>/serverconfig/e33chat-server.toml` (Fabric: `.json`
 
 | Mod / plugin | Status |
 |---|---|
-| No Chat Reports and similar no-report plugins | Auto-compatible since 2.1.0, no config needed |
-| CustomSkinLoader | Shows offline players' heads once installed |
-| ChatImage / ChatUpgrade (image protocols) | Native interop |
-| EasyBot (QQ group-server bridge) | `easybot_compat` is on by default; group messages become player bubbles automatically; CICode images render in bubbles |
-| IMBlocker | Auto-adapted (command input switches to English) |
-| ModernUI | Bounds-safe underlines / click regions |
-| Quark and similar item sharing | Item icons render correctly |
+| No Chat Reports and similar report-disabling plugins | Compatible automatically since 2.1.0, no config needed |
+| CustomSkinLoader | Shows offline players' heads |
+| ChatImage / ChatUpgrade (image protocols) | Native interoperability |
+| EasyBot (QQ ↔ Minecraft relay) | `easybot_compat` on by default; group messages become player bubbles and CICode images render inside the bubble |
+| IMBlocker | Adapted automatically (command input switches to English) |
+| ModernUI | Clickable-text underline and click-area boundary compatibility |
+| Quark and similar item sharing | Item icons in system messages render correctly |
 | ChatHeads, ChatAnimation | Work by default |
-| Nickname plugins | Partially supported, see [FAQ](#faq) |
-| Chat-format plugins (EssentialsChat / CMI / DeluxeChat, ...) | Adaptable via server templates (common presets included) |
+| **MiniHUD / malilib** | The chat panel draws **above** malilib overlays (MiniHUD info lines etc.) — malilib appends them at the TAIL of `Gui.extractRenderState`, later than every screen, so E33Chat deliberately defers its own screen draw until after that. Details in [docs/port-26.2-notes.md](docs/port-26.2-notes.md) |
+| Nickname plugins | Partial support, see [FAQ](#faq) |
+| Chat-format plugins (EssentialsChat / CMI / DeluxeChat …) | Adaptable through server-side templates (common presets included) |
 
 ---
 
 ## Known limitations
 
-1. Only Forge 1.20.1, NeoForge 1.21.1 and Fabric 1.21.1 are supported
-2. A nickname sharing nothing with the real name, with neither a "click to whisper" event nor a tab-list rename, shows as a grey system line (templates cannot help either)
-3. Formats with only whitespace between name and content cannot be parsed; NCR-encrypted chat shows as ciphertext
-4. The default host expires files after ~3h (server hosting is permanent but has a 512MB quota — keep an eye on it)
-5. Popup background texture overrides stopped working in 2.3.16 (see [Usage](#usage)); the scrollbar stays solid fill
+1. **Minecraft 26.2 + Fabric only, Java 25 required**; the 1.20.1 Forge / 1.21.1 NeoForge / Fabric platforms are retired
+2. If a nickname has no relation to the real name and the plugin neither attaches a "click to whisper" event nor syncs the tab name, the message shows as grey system text (templates cannot fix that)
+3. Formats where the name and the content are separated by nothing but spaces cannot be recognised; NCR encrypted chat shows ciphertext
+4. The default image host expires files after ~3 hours (server hosting is permanent, but the 512MB quota needs watching)
+5. **Two rendering downgrades on 26.2** (details in [docs/port-26.2-notes.md](docs/port-26.2-notes.md), section 3):
+   - **Rounded corners**: the old implementation used a custom SDF shader; it is now approximated by "a main rectangle plus per-row inset strips". Visually close at radius 6–8px, but not an anti-aliased SDF
+   - **Panel background blur** (`blurEnabled`): 26.2 replaced the FBO APIs this relied on, so it is currently a **no-op** — no blur, but no crash either. 26.2 does have a native full-screen blur, but it can only be called once per frame and means "blur everything before this layer", so it cannot do a local blur
+   - ~~Texture alpha / tint broken~~ — this one is **fixed**: the colour parameter was there all along, at the end of the `blit` parameter list
 
 ---
 
 ## Privacy & data
 
 > [!WARNING]
-> Chat history is stored in plain text under `.minecraft/e33chat/history/` (JSONL) on your machine. **Do not use it on public or untrusted computers.**
+> Chat history is stored **in plain text** on your machine. Do not enable it on a public or untrusted computer.
 
-- Chat history stays on your machine only, is off by default and is never uploaded; sensitive commands (`/login`, `/register`, ...) are skipped
-- **Images**: images you send go to a third-party host (default uguu.se, ~3h expiry) or — with server hosting on — to the server's storage; the client never uploads anything on its own
-- The server mod only relays (@ / quote / history / media) and collects no client data; saving, sync and hosting can all be turned off in config
+- **Chat history**: local only, off by default, never uploaded. Path: `<game dir>/e33chat/history/<world name>_<short hash>.json` (one JSON object per line, preserving colours and click events). Commands that carry credentials (`/login`, `/register`, …) are skipped
+- **Images**: images you send are uploaded to a third-party host (uguu.se by default, expiring in ~3 hours) or to the server's storage (when server hosting is on). The client never uploads anything on its own
+- **The server-side mod** only relays (@ / quotes / history / media) and collects no client data; history saving, syncing and hosting can all be turned off
 
 ---
 
 ## FAQ
 
-**Is the server mod required?** No. Installing it unlocks quote sync, @ sync, history sync, `/tpa` teleport and media hosting.
+**Do I need it on the server?** No. Installing it unlocks quote sync, @ sync, history sync, `/tpa` teleport and image hosting.
 
-**How do I open settings?** Bottom-left gear → Menu → Settings. Client config: `config/e33chat/e33chat-client.toml` (Fabric: `.json`) — every option is GUI-adjustable.
+**How do I open the config?** Bottom-left gear → menu → Settings in the panel, or via ModMenu from the mod list. The client config is `config/e33chat/e33chat-client.json`; everything is adjustable in the GUI.
 
-**Is chat history saved by default?** No (`chat_history = false`). Enable it in Settings → Chat → Chat History; saved every 30 s and on clean exits, a crash loses at most the last 30 s.
+**Is there a keybind?** No custom keybind. The panel uses the vanilla chat key (T by default) — the `[T]` on the HUD icon tells you which key that is.
 
-**How do I enable background blur?** `blur_enabled` is off by default since 2.3.16 (lowest value-per-cost; 2.3.5 taught a frame-drop lesson). Enable it in settings.
+**Is chat history saved by default?** No (`chatHistoryEnabled: false`). Enable it in Settings → Chat → Chat history. It autosaves every 30 seconds and on a clean exit; a crash loses at most 30 seconds.
 
-**Panel width and fullscreen?** `panel_width` (default 1000) counts physical screen pixels: set 800 and the panel stays a stable 800 physical pixels wide at any window size / GUI scale — it never widens or misaligns when the window is resized (it clamps to the window width when the window is narrower). Range 400–1600. To fill the whole screen instead, enable `panel_fullscreen` (off by default); it ignores `panel_width` and keeps the sidebar usable.
+**How do I enable background blur?** You can, but it **has no effect on 26.2** (`BlurRenderer` is a no-op — see [Known limitations](#known-limitations)).
 
-**Where do my images go?** With server hosting on (default) → the server, permanent. Otherwise → a third-party host (uguu.se, ~3h expiry). Both configurable.
+**How do I change panel width / make it fullscreen?** `panelWidth` (default 1000) is in physical screen pixels: set it to 800 and the panel occupies exactly 800 physical pixels at any window size or GUI scale, without shifting or clipping (it clamps to the window width if the window is narrower). Range 400–1600. To fill the screen, enable `panelFullscreen` (off by default), which ignores `panelWidth` and keeps the sidebar clickable.
 
-**Why is a message shown as grey?** When the client is not sure a line was said by a player, it conservatively shows it as grey (see [Known limitations](#known-limitations)); nickname plugins and unusual broadcast formats are common causes.
+**Where did my image go?** With server hosting on (the default) it is stored on the server permanently; otherwise it goes to the third-party host (uguu.se, ~3 hours). Both are configurable.
 
-**Are nickname plugins supported?** Partially: attribution works when the nickname carries a "click to whisper" event or the tab list is renamed; otherwise grey.
+**Why is a message grey?** When the client cannot be sure a player said it, it conservatively falls back to grey (see [Known limitations](#known-limitations)); nickname plugins and unusual broadcast formats are the usual causes.
 
-**The server changed the chat format and messages don't line up?** Use message-format templates: as an OP run `/e33chat gui`, paste a real chat line via "Generate from message…" or add a preset, save — it syncs to the whole server; an empty template list falls back to the guards.
+**Do nickname plugins work?** Partially: if the nickname carries a "click to whisper" event or the tab name is synced, attribution works; otherwise the message is grey.
 
-**How do I restore the vanilla chat?** Settings → Chat Screen → turn off "Enable E33Chat" (`enabled = false`); removing the mod restores everything.
+**The server changed its chat format and messages no longer match?** Use message format templates: as OP run `/e33chat gui`, use "generate from message" with a real chat line or pick a preset, and save — it syncs to everyone. Leaving the template empty restores heuristic detection.
+
+**Clicking links / player names does nothing?** Fixed in 2.4.15: 26.2 split the vanilla `handleTextClick` into two methods, and earlier builds only wired up the one handling URLs, which silently broke every `run_command` click (`/msg`, `/warp`, `/tpa`, clickable menus, relayed QQ links). Update and it works.
+
+**How do I go back to vanilla chat?** Settings → Chat → turn off "Enable E33Chat" (`enabled: false`); removing the mod restores everything.
 
 **Can I include it in a modpack?** Yes, no extra permission needed.
 
@@ -217,47 +239,91 @@ Server config: `saves/<world>/serverconfig/e33chat-server.toml` (Fabric: `.json`
 
 ## Troubleshooting
 
-1. Confirm the MC version, loader and JAR platform match; do not mix platform JARs
-2. Back up and delete `config/e33chat/e33chat-client.toml` to test for corruption; keep only E33Chat to isolate conflicts
-3. Image uploads failing: check `upload_url` and your network; the default host uguu.se is unreachable on some networks — switch hosts or enable server hosting
-4. Look for `[e33chat]` errors in `.minecraft/logs/latest.log`
-5. When reporting, include versions, mod list, `latest.log`, screenshots and reproduction steps
+1. Make sure it is **Minecraft 26.2 + Fabric + Java 25**, and that you are using a JAR built from this repository (old-platform JARs will not load)
+2. Back up and delete `config/e33chat/e33chat-client.json` to rule out config corruption; keep only E33Chat to rule out conflicts
+3. Image upload fails: check `upload_url` and your network; the default host uguu.se is unreachable from some networks — use a custom host or enable server hosting
+4. Check `.minecraft/logs/latest.log` for `[e33chat]` errors; on a crash, read the topmost report in `crash-reports/` — its `Description` and first stack frames
+5. When filing an issue, include the version, mod list, `latest.log`, screenshots and reproduction steps
 
 ---
 
 ## Building from source
 
+### Requirements
+
+- **JDK 25** (hard requirement of 26.2); point `JAVA_HOME` at it
+- Use the Gradle wrapper bundled in the repo; no separate Gradle install needed
+
+### Build
+
 ```bash
-git clone https://github.com/E33EPUS/E33Chat.git
-cd E33Chat
-
-# Forge 1.20.1 (default branch)
-./gradlew build
-
-# NeoForge 1.21.1
-git checkout Neoforge-1.21.1
-./gradlew build
-
-# Fabric 1.21.1
-git checkout Fabric-1.21.1
-./gradlew build
+cd platforms/26.2-fabric
+./gradlew build          # Windows: gradlew.bat build
 ```
 
-- Forge 1.20.1: Java 17+, supports `--offline`; NeoForge / Fabric: Java 21+
-- Run tests: `./gradlew cleanTest test --offline -PrunTests` (Forge / NeoForge need `-PrunTests`; Fabric does not)
-- The three branches are isomorphic — keep changes in sync across all three (the README is the same text in all three repos too)
+The artifact lands in `platforms/26.2-fabric/build/libs/e33chat-Fabric-26.2-2.4.15.jar`.
+
+Run the tests:
+
+```bash
+./gradlew test
+```
+
+### Repository layout
+
+```
+gradle.properties              repo-level identity (mod_version etc.)
+gradle/e33chat-layers.gradle   shared-layer assembly script
+versions/*.json                layer / target / dependency definitions (the script reads
+                               these, so no platform hardcodes a target name)
+shared/src/main/java/...       platform-neutral code (chat / compat / image / mixin / render / server)
+platforms/26.2-fabric/         the only target: Fabric 26.2
+  src/main/java/...            Fabric-side implementation (config / network / store / texture / ui / command …)
+  src/main/resources/          fabric.mod.json, mixin configs, textures and language files
+  src/test/java/...            JUnit 5
+docs/port-26.2-notes.md        API changes, rendering downgrades and gotchas of the 26.2 port
+ARCHITECTURE.md                overall architecture
+CHANGELOG.md                   change log
+```
+
+`platforms/26.2-fabric/build.gradle` does `apply from: '../../gradle/e33chat-layers.gradle'`, which wires `shared/` and the layers mounted for this target into the source set; all of the decisions live in `versions/*.json`.
+
+### Things to know when changing code on 26.2
+
+These were all hit for real during the port, so they are worth a look before you start:
+
+- **No Yarn mappings and no remap.** Minecraft has been unobfuscated since 26.1, so `com.mojang:minecraft` already gives readable official names; dependencies use `implementation` rather than `modImplementation` (Loom 1.18 also dropped the whole `mod*` configuration family)
+- **`Gui.extractRenderState(DeltaTracker, boolean renderHud, boolean renderScreen)` handles both the HUD and the current screen in a single call**, internally `Hud` → `overlay` → `Screen`. Cancelling at its HEAD therefore **cancels the screen too**; to skip only the HUD, intercept the single `Hud.extractRenderState` call
+- **Do not call `extractBackground` manually**: `Screen.extractRenderStateWithTooltipAndSubtitles` already calls it before `extractRenderState`, and a second call throws `IllegalStateException: Can only blur once per frame`. **Overriding** `extractBackground` in a screen is right; **calling** it from `extractRenderState` is wrong
+- **`blit` does have colour overloads**, with the colour last in the parameter list (the 10/11-arg and 12/13-arg families). Before concluding a new API lacks a capability, lay out the whole overload family by arity
+- **`Screen.handleTextClick` is gone**, split into two complementary static methods: `defaultHandleClickEvent` (URL / open file / command suggestion / clipboard) and `defaultHandleGameClickEvent` (`run_command` / `show_dialog` / `custom`). Wiring up only the former silently breaks "click to run a command"
+- **The pose is 2D** (`Matrix3x2fStack`) and `translate` has no z component — code that used z for layering now depends purely on draw order
+- **Mixin targets are strings resolved at runtime**: compiling is not proof that a mixin applies. No mixin here sets `require = 0`, so a wrong target fails loudly instead of silently
+- **MixinExtras is bundled with Fabric Loader** (`META-INF/jars/mixinextras-fabric-0.5.5.jar` inside 0.19.5), so `@WrapOperation` / `@Local` are available with no extra dependency
+- **Elements registered through `HudElementRegistry` live inside the HUD layer**, earlier than overlays that mods like malilib append at the TAIL of `extractRenderState` — to draw above those you must hook later
+
+### Two machine-local workarounds (this Windows box)
+
+Unrelated to the repository; a machine with direct Maven access does not need them:
+
+1. The JDK's bundled cacerts is missing Let's Encrypt's 2026 root `Root YR`, so Gradle downloads fail the handshake → a copy of the JDK was made with that root imported
+2. `repo.maven.apache.org` is hijacked by a local middlebox (it presents a self-signed certificate) → an `init.gradle` swaps the repositories for mirrors
+
+The exact commands are in [docs/port-26.2-notes.md](docs/port-26.2-notes.md), section 4.
 
 ---
 
 ## Changelog
 
-The full bilingual changelog lives in [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md) for the full history, and [docs/port-26.2-notes.md](docs/port-26.2-notes.md) for the details of the 26.2 port.
 
 ---
 
 ## Reporting issues
 
-Open an [Issue](https://github.com/E33EPUS/E33Chat/issues) and include versions, loader, mod list, `latest.log`, screenshots or video, and reproduction steps.
+File them at the upstream [Issues](https://github.com/E33EPUS/E33Chat/issues) with the version, loader, mod list, `latest.log`, screenshots or video, and reproduction steps.
+
+> If the problem is specific to the 26.2 port (for example a rendering glitch that only happens on 26.2), please say so and include the stack trace from the matching report in `crash-reports/`.
 
 ---
 

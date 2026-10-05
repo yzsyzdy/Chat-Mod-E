@@ -89,7 +89,7 @@
 ## 三、渲染降级（未收尾的视觉项）
 
 26.2 把自定义着色器的写法换成了 `RenderPipeline` 注册 + `layout(std140)` UBO。
-这批管线没重写，于是三处降级，代码里都留了 TODO：
+这批管线没重写，于是有降级，代码里都留了 TODO：
 
 1. **`RoundRectRenderer`（圆角）**
    旧版是自绘 SDF shader（`rendertype_round_rect` + `u_Rect`/`u_Radius` uniform）。
@@ -98,18 +98,117 @@
    *收尾*：把 `assets/minecraft/shaders/core/rendertype_round_rect.{json,vsh,fsh}`
    改成 26.2 的 UBO 形式，用 `RenderPipeline.builder()` 注册后换回 SDF。
 
-2. **`ColoredTextureRenderer`（纹理 alpha / tint）**
-   26.2 的 `GuiGraphicsExtractor.blit` **所有重载都没有颜色参数**（已逐个核对描述符），
-   所以运行时 alpha 与 tint 不生效 —— 面板/弹层的淡入淡出、白纹理着色会失效。
-   *收尾*：注册一个带颜色顶点属性的 `RenderPipeline`，再构造自定义
-   `GuiElementRenderState` 塞进 `GuiRenderState`。
+2. ~~**`ColoredTextureRenderer`（纹理 alpha / tint）**~~ —— **已修，原判断是错的**
+   原文写的是"26.2 的 `blit` 所有重载都没有颜色参数（已逐个核对描述符）"。
+   颜色参数一直都在，只是排在**最后**、容易被忽略：
+
+   ```
+   blit(pipeline, id, x, y, u, v, w, h, texW, texH)                            // 10
+   blit(pipeline, id, x, y, u, v, w, h, texW, texH, color)                     // 11
+   blit(pipeline, id, x, y, u, v, w, h, regionW, regionH, texW, texH)          // 12
+   blit(pipeline, id, x, y, u, v, w, h, regionW, regionH, texW, texH, color)   // 13
+   ```
+
+   证据（原版字节码）：11 参重载的方法体把自己的第 11 个参数原样转发给 13 参重载的
+   **最后一个**参数；而 `BlitRenderState` 的字段里，除 `x0/y0/x1/y1` 外唯一的 int 就是
+   `color`，`buildVertices` 会把它写进顶点色。所以「多出来的那个 int」就是 ARGB 颜色。
+
+   现在 `ColoredTextureRenderer` 恢复成「原调用 + 追加一个颜色参数」，几何与 UV 不变。
+   颜色按通道相乘：`0xFFFFFFFF` = 原样，alpha < 255 即半透明。
+   **教训**：判断"新 API 没有某个能力"之前，先把整族重载按参数个数排开看一遍 ——
+   颜色是最后一个参数，只核对"描述符里有没有 color 字样"是看不出来的。
 
 3. **`BlurRenderer`（面板背景模糊）**
    旧实现直接玩 FBO 句柄（`GL30.glGenFramebuffers` / `glBlitFramebuffer` /
    `Minecraft.getMainRenderTarget().frameBufferId`）。26.2 换成了跨后端
    （OpenGL / Vulkan）的 GPU 抽象，这条路连同 `GlStateManager` 一起没了。
    现在是空操作：面板不模糊，但也不会崩。
-   *收尾*：用 26.2 的后处理管线重做，或改成半透明遮罩。
+   *收尾*：26.2 已经有原生的整屏模糊（`GuiGraphicsExtractor.blurBeforeThisStratum`，
+   就是 `Screen.extractBackground` 用来做原版背景模糊的那个），但它**一帧只能调一次**，
+   而且语义是"模糊这一层之前的所有内容"。想给面板加局部模糊，得走 26.2 的后处理管线，
+   或者干脆改成半透明遮罩。
+
+## 三·补、GUI 绘制顺序：为什么 MiniHUD 的信息行永远压在界面之上
+
+反汇编 26.2 的 `Gui.extractRenderState(DeltaTracker, boolean renderHud, boolean renderScreen)`
+可以确认，它是**一次调用同时负责 HUD 和当前界面**：
+
+```
+iload_2 ifeq → 跳过 Hud.extractRenderState(...)                            // renderHud
+...
+iload_3 ifeq → 跳过 Screen.extractRenderStateWithTooltipAndSubtitles(...)  // renderScreen
+── TAIL ──
+```
+
+而 malilib（MiniHUD / Tweakeroo / Litematica 的前置）是在这个方法的 **TAIL** 处追加自己的
+覆盖层：`@Inject(method = "extractRenderState", at = @At("TAIL"))` → `runExtractGuiOverlayPost`。
+它没有做任何「界面是否打开」的判断（已核对字节码），所以 **MiniHUD 的信息行画在任何 Screen 之上**。
+
+两个推论：
+
+- **在 Fabric 的 HUD 图层系统里调顺序没用。** `HudElementRegistry` 注册的元素在
+  `Hud.extractRenderState` 内部，位置比 TAIL 早得多。想让自己的东西盖住 MiniHUD，
+  只能也排到它后面。
+- **不要靠 mixin 优先级去抢同一个 TAIL 插入点。** 第一版实现是在 `Gui.extractRenderState`
+  上再挂一个 `@At("TAIL")`、把 `priority` 设成 800（低于 malilib 的 900）指望排到它后面 ——
+  **实测不生效**。多个 mixin 在同一个 TAIL 插入点上的先后取决于 Mixin 的插入实现细节
+  （插入是锚在末尾那条 RETURN 的索引上，还是锚在"尾部"语义上，结果正好相反），
+  不能当作可靠依据。
+
+### 现在的做法：换成在**调用方**补画
+
+`GameRenderer.extract(DeltaTracker, boolean)` 里只调用一次 `Gui.extractRenderState`。
+把补画挂在**这次调用返回之后**（`TopLayerRedrawMixin`），malilib 的 TAIL 注入必然已经执行完
+（它在被调用方法内部），先后关系是确定的，跟优先级、跟别的 mod 都无关。
+
+时机也安全：26.2 把一帧拆成「抽取状态」和「真正绘制」两段 —— `GameRenderer.render(DeltaTracker,
+boolean)` 里先 `extract(...)`、之后才 `guiRenderer.render()`，而 `extract` 的最后一步是
+`sampleDuringExtract()`。所以这时候往 `GuiGraphicsExtractor` 里追加的元素一定还在本帧的绘制
+清单里，而且排在 malilib 追加的那些之后。这一点其实由用户的实测反证过：malilib 追加在 TAIL、
+能盖住界面，说明"抽取阶段里后追加的 = 后画的"。
+
+整体做法是「搬家」而不是「再画一遍」：面板是半透明的，画两遍会叠加得更不透明。搬家也顺带
+保住了 tooltip 冲刷（`GuiGraphicsExtractor.extractDeferredElements` 在
+`Screen.extractRenderStateWithTooltipAndSubtitles` 里面）和背景层序。
+
+用 `@WrapOperation` 而不是 `@Local` 抓 `GuiGraphicsExtractor`：可以直接从实参拿到它，
+不依赖局部变量表在别的注入点是否还在作用域内。
+
+### 防呆：推迟之前先确认补画在工作
+
+推迟绘制的含义是"这帧先不画、等会儿补"。万一补画那一钩子没装上，推迟下去就没人补，
+表现是**打开聊天面板整个界面不见**——比"被 MiniHUD 压住"严重得多。所以
+`TopLayerDraw` 里有个握手：补画钩子每跑一帧置位一次，只有置位之后才允许推迟；
+第一帧照原样画。这样最坏情况退化成"没有改进"，而不是"界面丢失"。
+
+### 顺带修掉的一个端口 bug
+
+`InGameHudMixin` 原先在 `Gui.extractRenderState` 的 **HEAD** 处 `ci.cancel()`。
+由上面那段字节码可知，这会把**当前界面一起取消**（连 `GuiRenderState.reset()` 都不执行），
+也就是打开 E33Chat 的配置界面时界面根本不画。现已改成只拦 `Hud.extractRenderState`
+那一次调用 —— 这才是 `HudVisibility` 注释里一直说的「只跳 HUD 层」。
+
+### 同类端口 bug：手动调 `extractBackground` → 「Can only blur once per frame」
+
+`PanelCropScreen`（选完自定义背景图之后的裁剪界面）和 `PlayerProfileScreen` 在
+`extractRenderState` 里又手动调了一次 `extractBackground`。1.21.1 时代 `Screen.render`
+**不**自动画背景，所以各界面得自己调；26.2 改了：
+
+```
+Screen.extractRenderStateWithTooltipAndSubtitles
+    nextStratum() -> extractBackground(...)     // 背景在这里已经画过一次
+    nextStratum() -> extractRenderState(...)     // 之后才进到界面自己的实现
+```
+
+再调一次会让背景模糊重复执行，直接抛
+`IllegalStateException: Can only blur once per frame`。表现就是「一选自定义背景贴图就崩」。
+
+两处的手动调用都已删掉（背景仍由原版那一次画出来，观感不变）。另外三个界面
+（`ChatBubbleConfigScreen` / `ServerConfigScreen` / `BedScreen`）是**覆写**
+`extractBackground` 成 no-op，那是正常做法，不受影响。
+
+> 判别方法：界面里**覆写** `extractBackground` 是对的；在 `extractRenderState` 里
+> **调用** `extractBackground` 是错的。
 
 ## 四、本机构建环境（与仓库无关）
 
