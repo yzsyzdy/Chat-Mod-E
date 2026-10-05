@@ -320,9 +320,9 @@ CHANGELOG.md                   变更记录
 
 ## 问题反馈
 
-到上游仓库 [Issues](https://github.com/E33EPUS/E33Chat/issues) 提交，附上版本号、加载器、模组列表、`latest.log`、截图或视频与复现步骤。
+到 [Issues](https://github.com/yzsyzdy/Chat-Mod-E/issues) 提交，附上版本号、加载器、模组列表、`latest.log`、截图或视频与复现步骤。
 
-> 如果是 26.2 端口特有的问题（例如只有 26.2 才出现的渲染异常），请额外说明，并尽量附上 `crash-reports/` 里对应那份的堆栈。
+> 本仓库是 [NoWordz/Chat-Mod-E](https://github.com/NoWordz/Chat-Mod-E) 的 Minecraft 26.2 移植分支。如果是 26.2 端口特有的问题（例如只有 26.2 才出现的渲染异常），请提到这里，并尽量附上 `crash-reports/` 里对应那份的堆栈。
 
 ---
 

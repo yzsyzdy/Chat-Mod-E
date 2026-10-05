@@ -321,9 +321,9 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history, and [docs/port-26.2-notes
 
 ## Reporting issues
 
-File them at the upstream [Issues](https://github.com/E33EPUS/E33Chat/issues) with the version, loader, mod list, `latest.log`, screenshots or video, and reproduction steps.
+File them at [Issues](https://github.com/yzsyzdy/Chat-Mod-E/issues) with the version, loader, mod list, `latest.log`, screenshots or video, and reproduction steps.
 
-> If the problem is specific to the 26.2 port (for example a rendering glitch that only happens on 26.2), please say so and include the stack trace from the matching report in `crash-reports/`.
+> This repository is the Minecraft 26.2 port of [NoWordz/Chat-Mod-E](https://github.com/NoWordz/Chat-Mod-E). If the problem is specific to the 26.2 port (for example a rendering glitch that only happens on 26.2), please say so and include the stack trace from the matching report in `crash-reports/`.
 
 ---
 
