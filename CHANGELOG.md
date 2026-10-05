@@ -1,5 +1,45 @@
 # Changelog
 
+## v2.4.18
+
+**移植：Minecraft 26.2 / Fabric 单目标（本版本头条）**
+
+- 目标从「1.20.1 Forge + 1.21.1 NeoForge + 1.21.1 Fabric」缩为单目标 26.2 Fabric：平台目录只保留 `platforms/26.2-fabric`，平台无关代码进 `shared/`，由 `gradle/e33chat-layers.gradle` 按 `versions/*.json` 装配源集（`tools/verify_targets.py` 产出 CI 矩阵）
+- 26.1 起 Minecraft 不再混淆：去掉 `mappings` 依赖、`modImplementation` / `modCompileOnly` 换成 `implementation` / `compileOnly`、去掉 remap 步骤；Loom 用 `net.fabricmc.fabric-loom` 1.18.2，Gradle 9.7.1，Java 25（来自官方版本 JSON 的 `javaVersion.majorVersion`）
+- 主要 API 迁移：`ResourceLocation`→`Identifier`、`GuiGraphics`→`GuiGraphicsExtractor`、`MinecraftClient`→`Minecraft`、`Screen.render`→`extractRenderState`、`HudRenderCallback`→`HudElementRegistry`、`PayloadTypeRegistry.playC2S/playS2C`→`serverboundPlay/clientboundPlay`、`Component.Serializer`→`ComponentSerialization.CODEC` + `RegistryOps.create`、`HolderLookup.Provider.listRegistries`→`listRegistryKeys`、`TeamColor`→`TextColor`、`WorldSavePath`→`LevelResource` 等
+- pose 变 2D（`Matrix3x2fStack`），`translate` 没有 z 分量：旧代码靠 z 分层的地方全部塌成一层，层序只由绘制顺序决定
+
+**修复**
+
+- **`run_command` 点击静默失效（移植缺陷）**：`Screen.handleTextClick` 在 26.2 被拆成两个互补的静态方法 —— `defaultHandleClickEvent`（OpenUrl / OpenFile / SuggestCommand / CopyToClipboard）与 `defaultHandleGameClickEvent`（RunCommand / ShowDialog / Custom，内部 `checkcast LocalPlayer`），前者**不会**转发给后者。移植时 4 个调用点全换成了前者，`defaultHandleGameClickEvent` 零命中。新增 `runVanillaClickEvent(ClickEvent)` 按 action 类型分流
+- **自定义背景贴图必崩（移植缺陷）**：`PanelCropScreen` / `PlayerProfileScreen` 在 `extractRenderState` 里手动调 `extractBackground`，而 26.2 的 `Screen.extractRenderStateWithTooltipAndSubtitles` 已经是 `nextStratum → extractBackground → nextStratum → extractRenderState`，等于一帧模糊两次 → `IllegalStateException: Can only blur once per frame`。两处手动调用删除。判别法：界面里**覆写** `extractBackground` 是对的，在 `extractRenderState` 里**调用**它是错的
+- **配置界面不渲染（移植缺陷）**：`InGameHudMixin` 原在 `Gui.extractRenderState` 的 HEAD 处 `ci.cancel()`，而该方法一次调用同时负责 HUD 与当前界面（`iload_2` 门控 `Hud.extractRenderState`、`iload_3` 门控 `Screen.extractRenderStateWithTooltipAndSubtitles`），cancel 会把界面连同 `GuiRenderState.reset()` 一起跳过。改为 `@WrapOperation` 只拦 `Hud.extractRenderState` 那一次调用
+- **纹理 alpha / tint 静默失效**：`ColoredTextureRenderer` 恢复成「原调用 + 追加颜色参数」，几何与 UV 不变。`blit` 的颜色参数一直都在（10/11 参与 12/13 参两族，颜色在最后；`BlitRenderState` 里除 `x0/y0/x1/y1` 外唯一的 int 就是 `color`）。调用点已核对：`drawWithAlpha` 传动画进度 / 面板 alpha，`drawTinted` 传 `(alpha<<24)|主题色`
+- **进服窗口 NPE**（与上游 `8ad0b11c` 同源）：`ChatListenerMixin` 自身 UUID 装饰名缓存、`ChatPipeline.tryParsePlayerLine`、`WhisperDetector.detectWhisperInSystemMessage` 三处改为「先取 `self`，判空后再解引用」。全树扫过同类写法，其余位置（`ChatClassifier` / `EchoSuppressor` / `TellClickDetector` / `TemplateLayer` / `ChatMessageEffects` / `ChatMessageStore` / `EchoTracker`）本来就是先判空
+- **表情纹理泄漏**：`EmoteStore.refresh()` 移除条目时先 `release(id)`（上游就有此泄漏，26.2 的 `register(id, texture)` 返回 void 让它更容易累积）
+- 权限检查强转 `LevelBasedPermissionSet` 抛 `ClassCastException` → 单人档「无效的玩家数据」（非 OP 不触发 `requires` 求值，所以只在单人档暴露），5 处改为 `permissions().hasPermission(...)`
+- 4 处会崩游戏的 mixin 注入目标：`MouseHandler.activeButton` 变 `MouseButtonInfo` 记录（改三个 boolean accessor）、`ChatInputSuggestor.showSuggestions` 增参、`InGameHudMixin`/`MinecraftClientMixin` 目标方法改名
+- 恢复上游 `ChatBubbleScreen` 的 `extractBackground` 空覆写（关掉原版模糊与压暗）
+- 删掉弹层输入框的每帧重复绘制（z 分层消失后已多余；画两遍会让文字与光标偏粗偏暗）
+
+**新增：把界面绘制推迟到 malilib 覆盖层之后**
+
+- `MalilibCompat` 探测 malilib（MiniHUD / Tweakeroo / Litematica 的前置）；`TopLayerScreen` 标记参与上浮的界面；`TopLayerDraw` 做同帧暂存
+- `TopLayerScreenMixin`（`@Mixin(Gui.class)`）用 `@WrapOperation` 拦下 `Screen.extractRenderStateWithTooltipAndSubtitles` 的**整次调用**（含 nextStratum / 背景 / 内容 / tooltip 冲刷），`TopLayerRedrawMixin`（`@Mixin(GameRenderer.class)`）在 `Gui.extractRenderState` 返回之后补画 —— 顺序确定，不依赖 mixin 优先级（靠优先级抢同一个 TAIL 插入点试过，不生效）
+- 防呆：补画钩子未确认跑过之前不推迟，否则「推迟了但没人补」会让界面整个消失
+- 提及横幅随之改到补画之后绘制：Fabric 的 `ScreenEvents.afterExtract` 触发于调用点、早于补画，那时画会被面板盖住
+
+**改进**
+
+- 与 chatprefix 的历史补发去重改为按它**实际配置**判断：原先只看 mod 在不在，chatprefix 关掉历史时两边都不补；现在读 `config/chatprefix/config.json`，读不出来时退回「自己补」（宁可重复也不漏）
+
+**说明**
+
+- 本仓库是 NoWordz/Chat-Mod-E 的 26.2 移植分支；`mod_version` 沿用上游序列（上游 2.4.17 → 本版本 2.4.18）
+- 圆角仍是「主体矩形 + 四角内缩」近似，不是抗锯齿 SDF；`BlurRenderer` 在 26.2 上是空操作
+- 上游 `961b29f0`（服务端没有 e33chat 通道时不发 hello）**未移植**：那是 NeoForge 的 `NetworkRegistry.checkPacket` 严格校验导致的，Fabric API 的 `ClientPlayNetworking.send` 只检查「是否在游戏里」（已核 6.3.4 字节码），未协商的通道包会被服务端忽略，不构成崩溃；加 `canSend` 门控反而有「时机过早导致群聊静默失效」的风险，需实测后再定
+- 上游的 Modrinth / CurseForge 项目 id 已从 `gradle.properties` 清空（fork 不应发到原作者的商店页面），商店发布任务由 `onlyIf` 正常跳过
+
 ## v2.4.15
 
 **修复：聊天历史下发不再能踢掉进服玩家（三端）**

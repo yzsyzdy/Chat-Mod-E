@@ -11,7 +11,7 @@
   <img alt="Loader" src="https://img.shields.io/badge/Loader-Fabric-orange">
   <img alt="Side" src="https://img.shields.io/badge/Side-Client%20required,%20server%20optional-blue">
   <img alt="Java" src="https://img.shields.io/badge/Java-25%2B-yellow">
-  <img alt="Version" src="https://img.shields.io/badge/Version-2.4.15-informational">
+  <img alt="Version" src="https://img.shields.io/badge/Version-2.4.18-informational">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-brightgreen">
 </p>
 
@@ -54,7 +54,7 @@ E33Chat 是一款聊天增强模组，把原版聊天 HUD 重做成聊天 APP �
 | ModMenu | 可选 | 20.0.0+，装了才能在模组列表里点进设置 |
 | CustomSkinLoader | 可选 | 显示离线玩家头像 |
 
-1. 下载 `e33chat-Fabric-26.2-2.4.15.jar`
+1. 下载 `e33chat-Fabric-26.2-2.4.18.jar`
 2. 放入 `.minecraft/mods/`
 3. 启动游戏（客户端必装；服务端可选，装了会多出一批功能，见[服务端加成](#服务端加成)）
 
@@ -229,7 +229,7 @@ E33Chat 是一款聊天增强模组，把原版聊天 HUD 重做成聊天 APP �
 
 **服务器改了聊天格式，消息对不上？** 用消息格式模板：OP 输入 `/e33chat gui`，「从消息生成」粘贴一条真实聊天行或预设一键加，保存即同步全服；模板留空恢复守卫识别。
 
-**消息里的链接 / 玩家名点了没反应？** 自 2.4.15 起已修复：26.2 把原版 `handleTextClick` 拆成了两个方法，早先版本只接上了处理 URL 的那一个，导致 `run_command` 类点击（`/msg`、`/warp`、`/tpa`、可点菜单、QQ 转发链接）静默失效。升级即可。
+**消息里的链接 / 玩家名点了没反应？** 自 2.4.18 起已修复：26.2 把原版 `handleTextClick` 拆成了两个方法，早先版本只接上了处理 URL 的那一个，导致 `run_command` 类点击（`/msg`、`/warp`、`/tpa`、可点菜单、QQ 转发链接）静默失效。升级即可。
 
 **怎么恢复原版聊天？** 设置 → 聊天框 → 关闭「启用 E33Chat」（`enabled: false`）；移除 mod 完全还原。
 
@@ -261,7 +261,7 @@ cd platforms/26.2-fabric
 ./gradlew build          # Windows: gradlew.bat build
 ```
 
-产物在 `platforms/26.2-fabric/build/libs/e33chat-Fabric-26.2-2.4.15.jar`。
+产物在 `platforms/26.2-fabric/build/libs/e33chat-Fabric-26.2-2.4.18.jar`。
 
 跑测试：
 

@@ -11,7 +11,7 @@
   <img alt="Loader" src="https://img.shields.io/badge/Loader-Fabric-orange">
   <img alt="Side" src="https://img.shields.io/badge/Side-Client%20required,%20server%20optional-blue">
   <img alt="Java" src="https://img.shields.io/badge/Java-25%2B-yellow">
-  <img alt="Version" src="https://img.shields.io/badge/Version-2.4.15-informational">
+  <img alt="Version" src="https://img.shields.io/badge/Version-2.4.18-informational">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-brightgreen">
 </p>
 
@@ -54,7 +54,7 @@ E33Chat is a chat-enhancement mod that rebuilds the vanilla chat HUD in a chat-a
 | ModMenu | Optional | 20.0.0+ — needed to reach the settings from the mod list |
 | CustomSkinLoader | Optional | Shows offline players' heads |
 
-1. Download `e33chat-Fabric-26.2-2.4.15.jar`
+1. Download `e33chat-Fabric-26.2-2.4.18.jar`
 2. Drop it into `.minecraft/mods/`
 3. Launch the game (client-side is required; the server side is optional and unlocks extra features — see [Server-side bonus](#server-side-bonus))
 
@@ -229,7 +229,7 @@ The server side is optional. Installing it additionally enables:
 
 **The server changed its chat format and messages no longer match?** Use message format templates: as OP run `/e33chat gui`, use "generate from message" with a real chat line or pick a preset, and save — it syncs to everyone. Leaving the template empty restores heuristic detection.
 
-**Clicking links / player names does nothing?** Fixed in 2.4.15: 26.2 split the vanilla `handleTextClick` into two methods, and earlier builds only wired up the one handling URLs, which silently broke every `run_command` click (`/msg`, `/warp`, `/tpa`, clickable menus, relayed QQ links). Update and it works.
+**Clicking links / player names does nothing?** Fixed in 2.4.18: 26.2 split the vanilla `handleTextClick` into two methods, and earlier builds only wired up the one handling URLs, which silently broke every `run_command` click (`/msg`, `/warp`, `/tpa`, clickable menus, relayed QQ links). Update and it works.
 
 **How do I go back to vanilla chat?** Settings → Chat → turn off "Enable E33Chat" (`enabled: false`); removing the mod restores everything.
 
@@ -261,7 +261,7 @@ cd platforms/26.2-fabric
 ./gradlew build          # Windows: gradlew.bat build
 ```
 
-The artifact lands in `platforms/26.2-fabric/build/libs/e33chat-Fabric-26.2-2.4.15.jar`.
+The artifact lands in `platforms/26.2-fabric/build/libs/e33chat-Fabric-26.2-2.4.18.jar`.
 
 Run the tests:
 

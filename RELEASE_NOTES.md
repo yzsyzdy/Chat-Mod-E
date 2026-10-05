@@ -1,5 +1,59 @@
 # Release Notes
 
+## v2.4.18
+
+**Minecraft 26.2 支持（本版本头条）**
+
+- 移植到 **Minecraft 26.2 / Fabric**：需要 Java 25、Fabric Loader 0.19.5+、Fabric API 0.161.0+26.2。1.20.1 Forge 与 1.21.1 NeoForge / Fabric 三个目标已移除，仓库缩为单目标（旧代码在 git 历史里）
+- 26.1 起 Minecraft 不再混淆，因此本仓没有 Yarn 映射，也没有 remap 步骤
+- 渲染管线按 26.2 重写：GUI 改为「收集渲染状态 → 统一提交」，pose 变成 2D（没有 z 分层）
+
+**修复**
+
+- **点击聊天里的可执行文本恢复生效**：玩家名上的 `/msg`、`/warp`、`/tpa`、可点菜单、QQ 转发链接此前点了完全没反应。26.2 把原版 `handleTextClick` 拆成了两个互补的静态方法，而移植只接上了处理 URL 与剪贴板的那个，`run_command` / `show_dialog` / `custom` 全部静默失效
+- **选自定义背景贴图不再崩**（`IllegalStateException: Can only blur once per frame`）：裁剪界面与玩家资料界面在 `extractRenderState` 里又手动调了一次 `extractBackground`，而 26.2 已经替它们调过
+- **打开配置界面时界面不再消失**：此前在 `Gui.extractRenderState` 的 HEAD 处 cancel，但该方法一次调用同时负责 HUD 与当前界面，等于把界面一起取消了
+- **聊天面板不再被 MiniHUD / malilib 的信息行压住**：malilib 在 `Gui.extractRenderState` 的 TAIL 追加覆盖层，位置晚于所有界面；现在把本模组界面的那一次绘制整体推迟到它之后（顺序确定，不靠 mixin 优先级）
+- **恢复纹理整体 alpha / tint**：面板与弹层的淡入淡出、`panelOpacity`、滚动条配色此前静默失效 —— 26.2 的 `blit` 有颜色参数，只是排在参数表最后
+- **进服瞬间的聊天包不再断开客户端**：包可能在本机玩家尚未创建时到达，无条件解引用 `player` 会 NPE 打死包处理器（与上游 2.4.17 的修复一致）
+- 面板背后不再多出原版的模糊与压暗（恢复上游的 `extractBackground` 空覆写）
+- 表情包反复增删不再泄漏显存（移除条目时释放纹理）
+- 权限检查不再因强转类型错误导致单人档「无效的玩家数据」
+
+**说明**
+
+- 本仓库是 [NoWordz/Chat-Mod-E](https://github.com/NoWordz/Chat-Mod-E) 的 26.2 移植分支，版本号沿用上游序列
+- 服务端仍可不装；服务端配置在 `<世界目录>/serverconfig/e33chat-server.json`
+- 圆角仍是「主体矩形 + 四角内缩」的近似，不是抗锯齿 SDF
+- 面板背景模糊 `blurEnabled` 在 26.2 上是空操作：26.2 的原生模糊一帧只能调一次，且语义是「模糊本层之前的所有内容」，做不了局部模糊
+
+----
+
+**Minecraft 26.2 support (the headline of this release)**
+
+- Ported to **Minecraft 26.2 / Fabric**: Java 25, Fabric Loader 0.19.5+, Fabric API 0.161.0+26.2. The 1.20.1 Forge and 1.21.1 NeoForge / Fabric targets are gone — the repository is single-target now (the old code lives in the git history)
+- Minecraft has been unobfuscated since 26.1, so there are no Yarn mappings here and no remap step
+- The rendering pipeline was rewritten for 26.2: the GUI is now "collect render state, then submit", and the pose is 2D (no z layering)
+
+**Fixed**
+
+- **Clickable text in chat works again**: `/msg`, `/warp` and `/tpa` on player names, clickable menus and relayed QQ links did nothing at all. 26.2 split the vanilla `handleTextClick` into two complementary static methods and the port had only wired up the one handling URLs and the clipboard, so every `run_command` / `show_dialog` / `custom` click silently failed
+- **Picking a custom background image no longer crashes** with `IllegalStateException: Can only blur once per frame`: the crop screen and the player profile screen called `extractBackground` manually inside `extractRenderState`, which 26.2 already does for them
+- **Config screens no longer vanish**: the HUD skip used to cancel at the HEAD of `Gui.extractRenderState`, but that single call renders both the HUD and the current screen, so cancelling it took the screen down too
+- **The chat panel is no longer buried under MiniHUD / malilib overlays**: malilib appends them at the TAIL of `Gui.extractRenderState`, later than every screen; this mod's screen draw is now deferred until after that (deterministic order, not mixin priority)
+- **Texture alpha / tint restored**: panel and popup fades, `panelOpacity` and scrollbar tinting had silently stopped working — 26.2's `blit` does take a colour, it is simply the last parameter
+- **Chat packets arriving during the join window no longer disconnect the client**: such a packet can land before the local player exists, and dereferencing `player` unconditionally NPE'd the packet handler (the same fix as upstream 2.4.17)
+- The vanilla blurred/dimmed backdrop no longer appears behind the panel (upstream's no-op `extractBackground` override is back)
+- Adding and removing emotes no longer leaks VRAM (the texture is released when an entry is dropped)
+- The permission check no longer throws a bad cast that broke singleplayer with "Invalid player data"
+
+**Notes**
+
+- This repository is the Minecraft 26.2 port of [NoWordz/Chat-Mod-E](https://github.com/NoWordz/Chat-Mod-E); the version number continues upstream's sequence
+- The server side is still optional; server config lives in `<world dir>/serverconfig/e33chat-server.json`
+- Rounded corners are still approximated by "a main rectangle plus per-row inset strips" rather than an anti-aliased SDF
+- Panel background blur (`blurEnabled`) is a no-op on 26.2: the native blur can only be called once per frame and means "blur everything before this layer", so it cannot do a local blur
+
 ## v2.4.15
 
 **修复**
