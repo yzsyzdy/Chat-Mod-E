@@ -66,8 +66,12 @@ public final class ChatPipeline {
      */
     public static ChatMessageStore.SenderMeta tryParsePlayerLine(
             Component message, String text, String logTag) {
-        var connection = Minecraft.getInstance().player.connection;
-        if (connection == null) return null;
+        // 进服窗口防护：调用方可能在本机玩家还不存在时跑到这里（服务端 / 代理插件在进服
+        // 瞬间发的聊天包）。跳过解析是安全的，解引用 player 不是 —— 那会 NPE 打死包处理器，
+        // 客户端直接被断开。与上游 8ad0b11c 修的是同一处。
+        var self = Minecraft.getInstance().player;
+        if (self == null) return null;
+        var connection = self.connection;
         var namesSet = new LinkedHashSet<String>();
         connection.getOnlinePlayers().forEach(info -> {
             for (String cand : ChatClassifier.nameCandidates(info)) namesSet.add(cand);

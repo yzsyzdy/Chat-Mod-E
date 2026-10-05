@@ -174,7 +174,11 @@ public class ChatListenerMixin {
             Component fullLine = params.decorate(raw);
             senderName = extractDecoratedName(fullLine, rawStr, name, senderName);
         }
-        if (senderId != null && senderId.equals(Minecraft.getInstance().player.getUUID())) {
+        // 进服窗口防护：包可能在本机玩家存在之前到达 —— 跳过这次缓存是安全的，解引用不是。
+        // 与上游 8ad0b11c 修的是同一处（那个提交里 fabric 侧只缺这一处防护，
+        // 上面 handleSystemMessage / handleDisguisedChat 的连接查找本移植已经带了）。
+        var self = Minecraft.getInstance().player;
+        if (senderId != null && self != null && senderId.equals(self.getUUID())) {
             ChatMessageStore.cacheOwnDecoratedName(senderName);
         }
         ChatMessageStore.debugLog("[e33chat] PlayerChat | raw='" + rawStr + "' | sender='" + senderName.getString() + "' | content='" + playerContent.getString() + "'");
